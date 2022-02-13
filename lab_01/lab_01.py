@@ -11,17 +11,6 @@ WIN_HEIGHT = 800
 CV_WIDE = 800
 CV_HEIGHT = 800
 
-POINT_RAD = 3.5
-
-TRIANGLE_1_COLOR = "green"
-TRIANGLE_2_COLOR = "#400070"
-BISEKS_1_COLOR = "#1e4169"
-BISEKS_2_COLOR = "blue"
-POINT_NAME_COLOR = "black"
-POINT_COLOR = "red"
-RESULT_LINE_COLOR = "#9311d9"
-AXIS_COLOR = "darkgray"
-
 PLACE_TO_DRAW = 0.8
 INDENT_WIDTH = 0.1
 
@@ -31,14 +20,13 @@ TASK = "На плоскости задано множество из N точе�
 
 AUTHOR = "Егорова Полина ИУ7-44Б"
 
+# Расстояние между точками
 def distance(x1, y1, x2, y2):
     return sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
 
 
+# Окна для ввода или изменения координат точки
 def dota_win():
-    '''
-        Функция для создания окна для ввода или изменения координат точки
-    '''
 
     dot_win = Tk()
     dot_win.title("Координаты точки")
@@ -60,6 +48,7 @@ def dota_win():
     return dot_win, dot_x, dot_y
 
 
+# Окно для вывода текстового ответа
 def answer(center, radius, diff, count_inside, count_outside, onside):
     ans_win = Tk()
     ans_win.title("Ответ")
@@ -79,10 +68,8 @@ def answer(center, radius, diff, count_inside, count_outside, onside):
     ans_label.place(x=40, y=30)
 
 
+# Функция для нахождения коэффициента масштабирования
 def find_scale(points):
-    '''
-        Функция для нахождения коэффициента масштабирования (используя все точки полотна)
-    '''
 
     x_min = points[0][0]
     y_min = points[0][1]
@@ -113,10 +100,9 @@ def find_scale(points):
 
     return min(k_x, k_y), x_min, y_min
 
+
+# Функция для чтения координат точки, их обработки и добавления в множество
 def read_dot(dots_block, dots_list, place, dot_x, dot_y):
-    '''
-        Функция для чтения координат точки, их обработки и добавления в множество
-    '''
     try:
         coords_dot = []
 
@@ -135,16 +121,12 @@ def read_dot(dots_block, dots_list, place, dot_x, dot_y):
 
         dot_str = "%d : (%-3.1f; %-3.1f)" % (place + 1, float(dot_x), float(dot_y))
         dots_block.insert(place, dot_str)
-
-        # print(dots_list)
     except:
         messagebox.showerror("Ошибка", "Неверно введены координаты точки")
 
 
+# Функция для добавления точки в множество
 def add_dot(dots_block, dots_list):
-    '''
-        Функция для добавления точки в множество
-    '''
     dot_win, dot_x, dot_y = dota_win()
 
     add_but = Button(dot_win, text="Добавить", font="AvantGardeC 14",
@@ -153,10 +135,9 @@ def add_dot(dots_block, dots_list):
 
     dot_win.mainloop()
 
+
+# Функция для изменения координат точки выбранного множества
 def change_dot(dots_block, dots_list):
-    '''
-        Функция для изменения координат точки выбранного множества
-    '''
     try:
         place = dots_block.curselection()[0]
     except:
@@ -172,10 +153,8 @@ def change_dot(dots_block, dots_list):
     dot_win.mainloop()
 
 
+# Функция для удаления точки их выбранного множества
 def del_dot(dots_block, dots_list):
-    '''
-        Функция для удаления точки их выбранного множества
-    '''
     try:
         place = dots_block.curselection()[0]
         dots_list.pop(place)
@@ -190,10 +169,8 @@ def del_dot(dots_block, dots_list):
         messagebox.showerror("Ошибка", "Не выбрана точка")
 
 
+# Функция для удаления всех точек текущего множества
 def del_all_dots(dots_block, dots_list):
-    '''
-        Функция для удаления всех точек текущего множества
-    '''
     if (len(dots_list) != 0):
         dots_block.delete(0, END)
         dots_list.clear()
@@ -203,33 +180,29 @@ def del_all_dots(dots_block, dots_list):
         messagebox.showerror("Ошибка", "Список точек пуст")
 
 
+# Функция для перевода точки в нужные координаты (для масштабирования)
 def translate_point(x, y, x_min, y_min, k):
-    '''
-        Функция для перевода точки в нужные координаты (для масштабирования)
-    '''
     x = INDENT_WIDTH * CV_WIDE + (x - x_min) * k
     y = INDENT_WIDTH * CV_HEIGHT + (y - y_min) * k
 
     return x, y
 
 
+# Функция для отрисовки осей координат
 def draw_axises(x_min, y_min, k, color):
-    '''
-        Функция для отрисовки осей координат
-    '''
     x_axis_x1, x_axis_y1 = translate_point(CV_WIDE, 0, x_min, y_min, k)
     x_axis_x2, x_axis_y2 = translate_point(-CV_WIDE, 0, x_min, y_min, k)
 
     y_axis_x1, y_axis_y1 = translate_point(0, CV_HEIGHT, x_min, y_min, k)
     y_axis_x2, y_axis_y2 = translate_point(0, -CV_HEIGHT, x_min, y_min, k)
 
-    print(x_axis_x1, x_axis_x2, y_axis_y1, y_axis_y2)
+    #print(x_axis_x1, x_axis_x2, y_axis_y1, y_axis_y2)
 
-    # Coord lines
     canvas_win.create_line(-CV_WIDE, -x_axis_y1 + CV_HEIGHT, CV_WIDE, -x_axis_y2 + CV_HEIGHT, width=1, fill=color)
     canvas_win.create_line(y_axis_x1, -CV_HEIGHT, y_axis_x2, CV_HEIGHT, width=1, fill=color)
 
 
+# Определение и запись координат точки по клику
 def click(event):
     print(event.x, event.y)
     if event.x < 0 or event.x > 800 or event.y < 0 or event.y > 800:
@@ -250,6 +223,7 @@ def start_axis(x_min, y_min, k, color):
     draw_axises(x_min, y_min, k, color)
 
 
+# Решение
 def solution(dots_list):
     diff = 100000
     outside_points = []
@@ -300,6 +274,7 @@ def solution(dots_list):
     return cent, rad, outside_points, inside_points, onside_points
 
 
+# Прорисовка всех точек
 def draw_all_points(dots_list, x_min, y_min, k, color):
     for point in dots_list:
         #x0, y0 = translate_point(point[0], point[1], x_min, y_min, k)
@@ -313,6 +288,7 @@ def draw_all_points(dots_list, x_min, y_min, k, color):
         canvas_win.create_oval(x1, y1, x2, y2, outline=color, fill=color, width=3, tag='dot')
 
 
+# Прорисовка всех объектов
 def draw_solution(dots_list):
     if (len(dots_list) < 3):
         messagebox.showerror("Ошибка", "Недостаточно точек для построения")
@@ -361,6 +337,7 @@ if __name__ == "__main__":
     dots_label = Label(text="Координаты точек", bg='pink', font="AvantGardeC 14")
     dots_label.place(x=50, y=20)
 
+    # Список точек
     dots_block = Listbox(bg="#ffffff")
     dots_block.configure(height=25, width=28)
     dots_block.configure(font="AvantGardeC 14")
@@ -393,7 +370,7 @@ if __name__ == "__main__":
     draw_axises(-320, -320, 1, 'black')
     canvas_win.bind('<1>', click)
 
-    ''' Меню '''
+    # Меню
     mmenu = Menu(win)
 
     add_menu = Menu(mmenu)
