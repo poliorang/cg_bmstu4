@@ -11,8 +11,7 @@ actions = []
 WIN_WIDTH = 1200
 WIN_HEIGHT = 800
 
-CV_WIDE = 800
-CV_HEIGHT = 800
+SIZE = 800
 
 PLACE_TO_DRAW = 0.8
 INDENT_WIDTH = 0.1
@@ -42,21 +41,13 @@ def line_intersection(line1, line2):
     return x, y
 
 
-# 3 точки лежат на 1 прямой
-def check_one_line(x1, y1, x2, y2, x3, y3):
-    if (x3 - x1) / (x2 - x1) == (y3 - y1) / (y2 - y1):
-        return 0
-    return 1
-
-
 # Расстояние между точками
 def distance(x1, y1, x2, y2):
     return sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
 
 
 # Окна для ввода или изменения координат точки
-def dota_win():
-
+def dots_win():
     dot_win = Tk()
     dot_win.title("Координаты точки")
     dot_win['bg'] = "grey"
@@ -124,15 +115,15 @@ def find_scale(points):
     if y_max < 0:
         y_max = 1
 
-    k_x = (PLACE_TO_DRAW * CV_WIDE) / (x_max - x_min)
-    k_y = (PLACE_TO_DRAW * CV_HEIGHT) / (y_max - y_min)
+    k_x = (PLACE_TO_DRAW * SIZE) / (x_max - x_min)
+    k_y = (PLACE_TO_DRAW * SIZE) / (y_max - y_min)
 
     return min(k_x, k_y), x_min, y_min
 
 
 # Функция для чтения координат точки, их обработки и добавления в множество
 def read_dot(dots_block, dots_list, place, dot_x, dot_y):
-    try:
+    #try:
         coords_dot = []
         coords_dot.append(float(dot_x))
         coords_dot.append(float(dot_y))
@@ -151,15 +142,14 @@ def read_dot(dots_block, dots_list, place, dot_x, dot_y):
         dots_block.insert(place, dot_str)
 
         points = canvas_win.find_withtag('dot')
-
-        actions.append(f'canvas_win.delete({points[-1]})+dots_list.pop(-1)+dots_block.delete({place}, END)')
-    except:
-        messagebox.showerror("Ошибка", "Неверно введены координаты точки")
+        actions.append(f'canvas_win.delete({points[-1]})+dots_list.pop({place})+dots_block.delete({place}, END)')
+    #except:
+    #    messagebox.showerror("Ошибка", "Неверно введены координаты точки")
 
 
 # Функция для добавления точки в множество
 def add_dot(dots_block, dots_list):
-    dot_win, dot_x, dot_y = dota_win()
+    dot_win, dot_x, dot_y = dots_win()
 
     add_but = Button(dot_win, text="Добавить", font="AvantGardeC 14",
                      command=lambda: read_dot(dots_block, dots_list, END, dot_x.get(), dot_y.get()))
@@ -176,7 +166,7 @@ def change_dot(dots_block, dots_list):
         messagebox.showerror("Ошибка", "Не выбрана точка")
         return
 
-    dot_win, dot_x, dot_y = dota_win()
+    dot_win, dot_x, dot_y = dots_win()
 
     add_but = Button(dot_win, text="Изменить", font="AvantGardeC 14",
                      command=lambda: read_dot(dots_block, dots_list, place, dot_x.get(), dot_y.get()))
@@ -206,11 +196,9 @@ def del_all_dots(dots_block, dots_list):
     if len(dots_list) != 0:
         dots_block.delete(0, END)
         dots_list.clear()
-        canvas_win.delete("all")
-        draw_axies(-320, -320, 1, 'black')
-        draw_start_axies('black')
-    else:
-        messagebox.showerror("Ошибка", "Список точек пуст")
+    canvas_win.delete("all")
+    draw_axies(-320, -320, 1, 'black')
+    draw_start_axies('black')
 
 
 # Функция отрисовки подписей осей
@@ -224,19 +212,19 @@ def draw_start_axies(color):
 
 # Функция для отрисовки осей координат
 def draw_axies(x_min, y_min, k, color):
-    x_x1, x_y1 = translate_point(CV_WIDE, 0, x_min, y_min, k)
-    x_x2, x_y2 = translate_point(-CV_WIDE, 0, x_min, y_min, k)
+    x_x1, x_y1 = translate_point(SIZE, 0, x_min, y_min, k)
+    x_x2, x_y2 = translate_point(-SIZE, 0, x_min, y_min, k)
 
-    y_x1, y_y1 = translate_point(0, CV_HEIGHT, x_min, y_min, k)
-    y_x2, y_y2 = translate_point(0, -CV_HEIGHT, x_min, y_min, k)
+    y_x1, y_y1 = translate_point(0, SIZE, x_min, y_min, k)
+    y_x2, y_y2 = translate_point(0, -SIZE, x_min, y_min, k)
 
-    canvas_win.create_line(-CV_WIDE, -x_y1 + CV_HEIGHT, CV_WIDE, -x_y2 + CV_HEIGHT, width=1, fill=color)
-    canvas_win.create_line(y_x1, -CV_HEIGHT, y_x2, CV_HEIGHT, width=1, fill=color)
+    canvas_win.create_line(-SIZE, -x_y1 + SIZE, SIZE, -x_y2 + SIZE, width=1, fill=color)
+    canvas_win.create_line(y_x1, -SIZE, y_x2, SIZE, width=1, fill=color)
 
     global coord_center
 
     x, y = line_intersection([(x_x1, x_y1), (x_x2, x_y2)], [(y_x1, y_y1), (y_x2, y_y2)])
-    coord_center = x, CV_WIDE - y
+    coord_center = x, SIZE - y
 
 
 # Определение и запись координат точки по клику
@@ -251,8 +239,6 @@ def click(event):
 
     canvas_win.create_oval(x1, y1, x2, y2, outline='pink', fill='pink', width=2, tag='dot')
 
-    # x0, y0 = click_scaling(event.x, event.y, coord_center, k)
-    # print(coord_center)
 
     x = (event.x - coord_center[0]) / k
     y = (- event.y + coord_center[1]) / k
@@ -305,10 +291,10 @@ def solution(dots_list):
             outside_points = outside.copy()
             inside_points = inside.copy()
             onside_points = three
-            rad = radius
+            radi = radius
             cent = center
 
-    return cent, rad, outside_points, inside_points, onside_points
+    return cent, radi, outside_points, inside_points, onside_points
 
 
 # Прорисовка всех точек
@@ -318,16 +304,16 @@ def draw_all_points(dots_list, x_min, y_min, k, color, color_active):
 
         x1, y1 = (x0 - 2), (y0 - 2)
         x2, y2 = (x0 + 2), (y0 + 2)
-        canvas_win.create_oval(x1, - y1 + CV_HEIGHT, x2, - y2 + CV_HEIGHT,
+        canvas_win.create_oval(x1, - y1 + SIZE, x2, - y2 + SIZE,
                                outline=color, fill=color, activeoutline=color_active, width=3, tag='dot')
-        canvas_win.create_text(x0 + 15, -y0 + CV_HEIGHT + 15,
+        canvas_win.create_text(x0 + 15, -y0 + SIZE + 15,
                                text="(%.1f; %.1f)" % (point[0], point[1]), font="AvantGardeC 9", fill=color)
 
 
-# Функция для перевода точки в нужные координаты (для масштабирования)
+# Координаты точки для масштабирования
 def translate_point(x, y, x_min, y_min, k):
-    x = INDENT_WIDTH * CV_WIDE + (x - x_min) * k
-    y = INDENT_WIDTH * CV_HEIGHT + (y - y_min) * k
+    x = INDENT_WIDTH * SIZE + (x - x_min) * k
+    y = INDENT_WIDTH * SIZE + (y - y_min) * k
 
     return x, y
 
@@ -357,13 +343,17 @@ def draw_solution(dots_list):
     # Окружность
     x1, y1 = translate_point(center[0] - radius, center[1] + radius, x_min, y_min, k)
     x2, y2 = translate_point(center[0] + radius, center[1] - radius, x_min, y_min, k)
-    canvas_win.create_oval(x1, - y1 + CV_HEIGHT, x2, - y2 + CV_HEIGHT,
+    canvas_win.create_oval(x1, - y1 + SIZE, x2, - y2 + SIZE,
                            activeoutline='lightgreen', outline='grey', width=3, tag='oval')
 
     # Центр окружности
     cx1, cy1 = translate_point(center[0] - 0.01 * k, center[1] + 0.01 * k, x_min, y_min, k)
     cx2, cy2 = translate_point(center[0] + 0.01 * k, center[1] - 0.01 * k, x_min, y_min, k)
-    canvas_win.create_oval(cx1, - cy1 + CV_HEIGHT, cx2, - cy2 + CV_HEIGHT, outline='grey', width=1)
+    canvas_win.create_oval(cx1, - cy1 + SIZE, cx2, - cy2 + SIZE, outline='grey', width=1, tag='cent')
+
+    ovals = canvas_win.find_withtag('oval')
+    centers = canvas_win.find_withtag('cent')
+    actions.append(f'canvas_win.delete({ovals[-1]})+canvas_win.delete({centers[-1]})')
 
     answer_win(center, radius, abs(len(outside_points) - len(inside_points)),
            len(outside_points), len(inside_points), onside_points)
@@ -388,7 +378,7 @@ if __name__ == "__main__":
     win.title("Лабораторная работа #1")
     win.resizable(False, False)
 
-    canvas_win = Canvas(win, width=CV_WIDE, height=CV_HEIGHT, bg="#ffffff")
+    canvas_win = Canvas(win, width=SIZE, height=SIZE, bg="#ffffff")
     canvas_win.place(x=300, y=0)
 
     # Множество точек
