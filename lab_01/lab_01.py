@@ -54,15 +54,17 @@ def dots_win():
     dot_win.geometry("265x200+400+250")
     dot_win.resizable(False, False)
 
-    dot_x_label = Label(dot_win, text="X", bg="pink", font="AvantGardeC 14")
+    dot_x_label = Label(dot_win, text="X", bg="pink", font="AvantGardeC 14", fg='black')
     dot_x_label.place(x=40, y=30, relheight=0.15, relwidth=0.3)
-    dot_x = Entry(dot_win, font="AvantGardeC 14")
+    dot_x = Entry(dot_win, font="AvantGardeC 14", bg='white', fg='black',
+                  borderwidth=0, insertbackground='black')
     dot_x.focus()
     dot_x.place(x=40, y=70, relheight=0.15, relwidth=0.3)
 
-    dot_y_label = Label(dot_win, text="Y", bg="pink", font="AvantGardeC 14")
+    dot_y_label = Label(dot_win, text="Y", bg="pink", font="AvantGardeC 14", fg='black')
     dot_y_label.place(x=130, y=30, relheight=0.15, relwidth=0.3)
-    dot_y = Entry(dot_win, font="AvantGardeC 14")
+    dot_y = Entry(dot_win, font="AvantGardeC 14", bg='white', fg='black',
+                  borderwidth=0, insertbackground='black')
     dot_y.place(x=130, y=70, relheight=0.15, relwidth=0.3)
 
     return dot_win, dot_x, dot_y
@@ -118,6 +120,7 @@ def find_scale(points):
     k_x = (PLACE_TO_DRAW * SIZE) / (x_max - x_min)
     k_y = (PLACE_TO_DRAW * SIZE) / (y_max - y_min)
 
+    print('k ', k_x, k_y)
     return min(k_x, k_y), x_min, y_min
 
 
@@ -125,10 +128,23 @@ def find_scale(points):
 def read_dot(place, dot_x, dot_y):
     #try:
         coords_dot = []
-        coords_dot.append(float(dot_x))
-        coords_dot.append(float(dot_y))
+        x = float(dot_x)
+        y = float(dot_y)
+        coords_dot.append(x)
+        coords_dot.append(y)
+
+        x0, y0 = translate_point(x, -y, -80, -80, 4)
+        canvas_win.create_oval(x0 + 2, y0 + 2, x0 - 2, y0 - 2,
+                               outline='pink', fill='pink', width=2, tag='dot')
+
+        canvas_win.create_text(x0 + 15, y0 + 15, text="(%-3.1f; %-3.1f)" % (x, y),
+                               font="AvantGardeC 9", fill='black', tag='text')
 
         if place != END:  # изменить точку
+            point = canvas_win.find_withtag('dot')[place]
+            text = canvas_win.find_withtag('text')[place]
+            canvas_win.delete(point)
+            canvas_win.delete(text)
             dots_block.delete(place)
             dots_list.pop(place)
             coords_dot.append(place + 1)
@@ -139,7 +155,7 @@ def read_dot(place, dot_x, dot_y):
             dots_list.append(coords_dot)
 
 
-        dot_str = "%d : (%-3.1f; %-3.1f)" % (place + 1, float(dot_x), float(dot_y))
+        dot_str = "%d : (%-3.1f; %-3.1f)" % (place + 1, x, y)
         dots_block.insert(place, dot_str)
 
         points = canvas_win.find_withtag('dot')
@@ -160,8 +176,10 @@ def add_dot():
     dot_win, dot_x, dot_y = dots_win()
 
     add_but = Button(dot_win, text="Добавить", font="AvantGardeC 14",
-                     command=lambda: read_dot(END, dot_x.get(), dot_y.get()))
+                     borderwidth=0, command=lambda: read_dot(END, dot_x.get(), dot_y.get()))
     add_but.place(x=40, y=120, relheight=0.15, relwidth=0.64)
+
+
 
     dot_win.mainloop()
 
@@ -177,7 +195,7 @@ def change_dot():
     dot_win, dot_x, dot_y = dots_win()
 
     add_but = Button(dot_win, text="Изменить", font="AvantGardeC 14",
-                     command=lambda: read_dot(place, dot_x.get(), dot_y.get()))
+                     borderwidth=0, command=lambda: read_dot(place, dot_x.get(), dot_y.get()))
     add_but.place(x=40, y=120, relheight=0.15, relwidth=0.64)
 
     dot_win.mainloop()
@@ -208,9 +226,7 @@ def del_dot():
 
         coord_str = "(%-3.1f; %-3.1f)" % (coords[0], coords[1])
 
-        actions.append(f'canvas_win.create_oval({x1, y1, x2, y2}, outline="pink", fill="pink", width=2, tag="dot")+'+
-                       f'read_dot{END, coords[0], coords[1]}+canvas_win.create_text({x1 + 15, y1 + 15}, '
-                       f'text="{coord_str}", font="AvantGardeC 9", fill="black", tag="text")')
+        actions.append(f'read_dot{END, coords[0], coords[1]}+')
 
         # canvas_win.delete(point)
         canvas_win.delete(points[place])
@@ -278,13 +294,8 @@ def click(event):
     x1, y1 = (event.x - 2), (event.y - 2)
     x2, y2 = (event.x + 2), (event.y + 2)
 
-    canvas_win.create_oval(x1, y1, x2, y2, outline='pink', fill='pink', width=2, tag='dot')
-
     x = (event.x - coord_center[0]) / k
     y = (- event.y + coord_center[1]) / k
-
-    canvas_win.create_text(event.x + 15, event.y + 15, text="(%-3.1f; %-3.1f)" % (float(x), float(y)),
-                           font="AvantGardeC 9", fill='black', tag='text')
 
     read_dot(END, x, y)
 
@@ -405,14 +416,13 @@ def draw_solution():
 
 # откат
 def undo():
-    print(*actions, sep='\n')
-    print('\n')
+    # print(*actions, sep='\n')
+    # print('\n')
     if '+' in actions[-1]:
-        # print(actions[-1].split('+'))
         for act in actions[-1].split('+'):
             print(act)
             eval(act)
-    a = actions.pop(-1)
+    # a = actions.pop(-1)
     # print('a ', a)
     # print(actions[-1])
 
@@ -428,7 +438,7 @@ canvas_win = Canvas(win, width=SIZE, height=SIZE, bg="#ffffff")
 canvas_win.place(x=300, y=0)
 
 # Множество точек
-dots_label = Label(text="Координаты точек", bg='pink', font="AvantGardeC 14")
+dots_label = Label(text="Координаты точек", bg='pink', font="AvantGardeC 14", fg='black')
 dots_label.place(x=47, y=18)
 
 # Список точек
