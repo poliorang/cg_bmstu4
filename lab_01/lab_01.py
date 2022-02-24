@@ -84,7 +84,7 @@ def answer_win(center, radius, diff, count_inside, count_outside, onside):
                            "Разница количеств  ->  %d" % (center[0], center[1], radius, onside[0][0], onside[0][1],
                                                         onside[1][0], onside[1][1], onside[2][0], onside[2][1],
                                                         count_inside, count_outside, diff),
-                      bg="pink", justify='left', font="AvantGardeC 14")
+                      bg="pink", justify='left', font="AvantGardeC 14", fg='black')
     ans_label.place(x=40, y=30)
 
 
@@ -122,7 +122,7 @@ def find_scale(points):
 
 
 # Функция для чтения координат точки, их обработки и добавления в множество
-def read_dot(dots_block, dots_list, place, dot_x, dot_y):
+def read_dot(place, dot_x, dot_y):
     #try:
         coords_dot = []
         coords_dot.append(float(dot_x))
@@ -138,28 +138,36 @@ def read_dot(dots_block, dots_list, place, dot_x, dot_y):
             coords_dot.append(place + 1)
             dots_list.append(coords_dot)
 
+
         dot_str = "%d : (%-3.1f; %-3.1f)" % (place + 1, float(dot_x), float(dot_y))
         dots_block.insert(place, dot_str)
 
         points = canvas_win.find_withtag('dot')
-        actions.append(f'canvas_win.delete({points[-1]})+dots_list.pop({place})+dots_block.delete({place}, END)')
+        dot_text = canvas_win.find_withtag('text')
+        # print(*dot_text)
+        actions.append(f'canvas_win.delete({points[-1]})+dots_list.pop({place})+dots_block.delete({place}, END)+'
+                       f'canvas_win.delete({dot_text[-1]})')
+
+
+        #actions.append(f'canvas_win.delete({points[-1]})+dots_list.pop({place})+dots_block.delete({place}, END)+canvas_win.delete({text[-1]}')
     #except:
     #    messagebox.showerror("Ошибка", "Неверно введены координаты точки")
 
 
+
 # Функция для добавления точки в множество
-def add_dot(dots_block, dots_list):
+def add_dot():
     dot_win, dot_x, dot_y = dots_win()
 
     add_but = Button(dot_win, text="Добавить", font="AvantGardeC 14",
-                     command=lambda: read_dot(dots_block, dots_list, END, dot_x.get(), dot_y.get()))
+                     command=lambda: read_dot(END, dot_x.get(), dot_y.get()))
     add_but.place(x=40, y=120, relheight=0.15, relwidth=0.64)
 
     dot_win.mainloop()
 
 
 # Функция для изменения координат точки выбранного множества
-def change_dot(dots_block, dots_list):
+def change_dot():
     try:
         place = dots_block.curselection()[0]
     except:
@@ -169,36 +177,69 @@ def change_dot(dots_block, dots_list):
     dot_win, dot_x, dot_y = dots_win()
 
     add_but = Button(dot_win, text="Изменить", font="AvantGardeC 14",
-                     command=lambda: read_dot(dots_block, dots_list, place, dot_x.get(), dot_y.get()))
+                     command=lambda: read_dot(place, dot_x.get(), dot_y.get()))
     add_but.place(x=40, y=120, relheight=0.15, relwidth=0.64)
 
     dot_win.mainloop()
 
 
-# Функция для удаления точки их выбранного множества
-def del_dot(dots_block, dots_list):
+# Функция для удаления точки
+def del_dot():
     try:
         place = dots_block.curselection()[0]
-        dots_list.pop(place)
 
+        # print(place, ' list')
+
+        points = canvas_win.find_withtag('dot')
+        print(points)
+        dot_text = canvas_win.find_withtag('text')
+
+        coords = dots_list.pop(place)
+
+        x0, y0 = translate_point(coords[0], -coords[1], -80, -80, 4)
+        # for dot in points:
+        #     print(canvas_win.coords(dot)[0], x0, canvas_win.coords(dot)[1], y0)
+        #     if abs(canvas_win.coords(dot)[0] - x0) < 4 and abs(canvas_win.coords(dot)[1] - y0) < 4:
+        #         print('yep')
+        #         point = dot
+        # print(x0, y0)
+        x1, y1 = x0 - 2, y0 - 2
+        x2, y2 = x0 + 2, y0 + 2
+
+        coord_str = "(%-3.1f; %-3.1f)" % (coords[0], coords[1])
+
+        actions.append(f'canvas_win.create_oval({x1, y1, x2, y2}, outline="pink", fill="pink", width=2, tag="dot")+'+
+                       f'read_dot{END, coords[0], coords[1]}+canvas_win.create_text({x1 + 15, y1 + 15}, '
+                       f'text="{coord_str}", font="AvantGardeC 9", fill="black", tag="text")')
+
+        # canvas_win.delete(point)
+        canvas_win.delete(points[place])
+        canvas_win.delete(dot_text[place])
         dots_block.delete(0, END)
 
         for i in range(len(dots_list)):
             dot_str = "%d : (%-3.1f; %-3.1f)" % (i + 1, float(dots_list[i][0]), float(dots_list[i][1]))
             dots_list[i][2] = i + 1
             dots_block.insert(END, dot_str)
+
+
+        # del_all_dots(1)
+        # draw_all_points(dots_list, - (SIZE * INDENT_WIDTH), -80, k, 'pink', 'lightgreen')
+
     except:
         messagebox.showerror("Ошибка", "Не выбрана точка")
 
 
 # Функция для удаления всех точек текущего множества
-def del_all_dots(dots_block, dots_list):
-    if len(dots_list) != 0:
+def del_all_dots(canvas_param):
+    if canvas_param:
+        canvas_win.delete('dot')
+    else:
         dots_block.delete(0, END)
         dots_list.clear()
-    canvas_win.delete("all")
-    draw_axies(-320, -320, 1, 'black')
-    draw_start_axies('black')
+        canvas_win.delete('all')
+        draw_axies(-320, -320, 1, 'black')
+        draw_start_axies('black')
 
 
 # Функция отрисовки подписей осей
@@ -239,15 +280,17 @@ def click(event):
 
     canvas_win.create_oval(x1, y1, x2, y2, outline='pink', fill='pink', width=2, tag='dot')
 
-
     x = (event.x - coord_center[0]) / k
     y = (- event.y + coord_center[1]) / k
 
-    read_dot(dots_block, dots_list, END, x, y)
+    canvas_win.create_text(event.x + 15, event.y + 15, text="(%-3.1f; %-3.1f)" % (float(x), float(y)),
+                           font="AvantGardeC 9", fill='black', tag='text')
+
+    read_dot(END, x, y)
 
 
 # Решение
-def solution(dots_list):
+def solution():
     diff = 100000
     outside_points = []
     inside_points = []
@@ -298,15 +341,16 @@ def solution(dots_list):
 
 
 # Прорисовка всех точек
-def draw_all_points(dots_list, x_min, y_min, k, color, color_active):
-    for point in dots_list:
+def draw_all_points(dots, x_min, y_min, k, color, color_active):
+    for point in dots:
+        # print(point, end=' ')
         x0, y0 = translate_point(point[0], point[1], x_min, y_min, k)
-
+        # print(x0, y0, x_min, y_min, k)
         x1, y1 = (x0 - 2), (y0 - 2)
         x2, y2 = (x0 + 2), (y0 + 2)
         canvas_win.create_oval(x1, - y1 + SIZE, x2, - y2 + SIZE,
                                outline=color, fill=color, activeoutline=color_active, width=3, tag='dot')
-        canvas_win.create_text(x0 + 15, -y0 + SIZE + 15,
+        canvas_win.create_text(x0 + 15, -y0 + SIZE + 15, tag='text',
                                text="(%.1f; %.1f)" % (point[0], point[1]), font="AvantGardeC 9", fill=color)
 
 
@@ -319,7 +363,7 @@ def translate_point(x, y, x_min, y_min, k):
 
 
 # Прорисовка всех объектов
-def draw_solution(dots_list):
+def draw_solution():
     if len(dots_list) < 3:
         messagebox.showerror("Ошибка", "Недостаточно точек для построения")
         return
@@ -327,15 +371,15 @@ def draw_solution(dots_list):
     canvas_win.delete("all")
     global coord_center
 
-    center, radius, outside_points, inside_points, onside_points = solution(dots_list)
+    center, radius, outside_points, inside_points, onside_points = solution()
     all_points = dots_list.copy()
     all_points.append((center[0] - radius, center[1]))
     all_points.append((center[0] + radius, center[1]))
     all_points.append((center[0], center[1] - radius))
     all_points.append((center[0], center[1] + radius))
+
     k, x_min, y_min = find_scale(all_points)
     draw_axies(x_min, y_min, k, 'black')
-    # print(center, radius)
     draw_all_points(outside_points, x_min, y_min, k, 'pink', 'lightgreen')
     draw_all_points(inside_points, x_min, y_min, k, 'lightgreen', 'pink')
     draw_all_points(onside_points, x_min, y_min, k, 'black', 'pink')
@@ -361,80 +405,87 @@ def draw_solution(dots_list):
 
 # откат
 def undo():
+    print(*actions, sep='\n')
+    print('\n')
     if '+' in actions[-1]:
-        print(actions[-1].split('+'))
+        # print(actions[-1].split('+'))
         for act in actions[-1].split('+'):
+            print(act)
             eval(act)
-    actions.pop(-1)
+    a = actions.pop(-1)
+    # print('a ', a)
+    # print(actions[-1])
+
+dots_list = []
+
+win = Tk()
+win['bg'] = 'grey'
+win.geometry("%dx%d" % (WIN_WIDTH, WIN_HEIGHT))
+win.title("Лабораторная работа #1")
+#win.resizable(False, False)
+
+canvas_win = Canvas(win, width=SIZE, height=SIZE, bg="#ffffff")
+canvas_win.place(x=300, y=0)
+
+# Множество точек
+dots_label = Label(text="Координаты точек", bg='pink', font="AvantGardeC 14")
+dots_label.place(x=47, y=18)
+
+# Список точек
+dots_block = Listbox(bg="#ffffff")
+dots_block.configure(height=25, width=28, font="AvantGardeC 14", fg='black')
+dots_block.place(x=30, y=55)
+
+add = Button(text="Добавить", width=12, height=2, font="AvantGardeC 14",
+             borderwidth=0, command=lambda: add_dot())
+add.place(x=30, y=530)
+
+del1 = Button(text="Удалить", width=12, height=2, font="AvantGardeC 14",
+              borderwidth=0, command=lambda: del_dot())
+del1.place(x=150, y=530)
+
+chg = Button(text="Изменить", width=12, height=2, font="AvantGardeC 14",
+             borderwidth=0, command=lambda: change_dot())
+chg.place(x=30, y=575)
+
+del_all = Button(text="Очистить", width=12, height=2, font="AvantGardeC 14",
+                 borderwidth=0, command=lambda: del_all_dots(0))
+del_all.place(x=150, y=575)
+
+condition = Button(text="Условие задачи", width=27, height=2, font="AvantGardeC 14",
+                   borderwidth=0, command=lambda: messagebox.showinfo("Задание", TASK))
+condition.place(x=30, y=640)
+
+solut = Button(text="Решить задачу", width=27, height=2, font="AvantGardeC 14",
+               borderwidth=0, command=lambda: draw_solution())
+solut.place(x=30, y=685)
+
+undo_but = Button(text="↩", width=5, height=1, font="AvantGardeC 14",
+                  borderwidth=0, command=lambda: undo())
+undo_but.place(x=195, y=19)
+
+k = 4
+x_min = y_min = -320
+
+draw_axies(x_min, y_min, 1, 'black')
+draw_start_axies('black')
+canvas_win.bind('<1>', click)
+
+# Меню
+mmenu = Menu(win)
+
+add_menu = Menu(mmenu)
+add_menu.add_command(label='О программе и авторе',
+                     command=lambda: messagebox.showinfo('О программе и авторе', TASK + AUTHOR))
+add_menu.add_command(label='Выход', command=exit)
+mmenu.add_cascade(label='Help', menu=add_menu)
+
+win.config(menu=mmenu)
+
+win.mainloop()
 
 
-if __name__ == "__main__":
-
-    dots_list = []
-
-    win = Tk()
-    win['bg'] = 'grey'
-    win.geometry("%dx%d" % (WIN_WIDTH, WIN_HEIGHT))
-    win.title("Лабораторная работа #1")
-    win.resizable(False, False)
-
-    canvas_win = Canvas(win, width=SIZE, height=SIZE, bg="#ffffff")
-    canvas_win.place(x=300, y=0)
-
-    # Множество точек
-    dots_label = Label(text="Координаты точек", bg='pink', font="AvantGardeC 14")
-    dots_label.place(x=47, y=18)
-
-    # Список точек
-    dots_block = Listbox(bg="#ffffff")
-    dots_block.configure(height=25, width=28)
-    dots_block.configure(font="AvantGardeC 14")
-    dots_block.place(x=30, y=55)
-
-    add = Button(text="Добавить", width=12, height=2, font="AvantGardeC 14",
-                  command=lambda: add_dot(dots_block, dots_list))
-    add.place(x=30, y=530)
-
-    del1 = Button(text="Удалить", width=12, height=2, font="AvantGardeC 14",
-                  command=lambda: del_dot(dots_block, dots_list))
-    del1.place(x=150, y=530)
-
-    chg = Button(text="Изменить", width=12, height=2, font="AvantGardeC 14",
-                  command=lambda: change_dot(dots_block, dots_list))
-    chg.place(x=30, y=575)
-
-    del_all = Button(text="Очистить", width=12, height=2, font="AvantGardeC 14",
-                      command=lambda: del_all_dots(dots_block, dots_list))
-    del_all.place(x=150, y=575)
-
-    condition = Button(text="Условие задачи", width=27, height=2, font="AvantGardeC 14",
-                     command=lambda: messagebox.showinfo("Задание", TASK))
-    condition.place(x=30, y=640)
-
-    solut = Button(text="Решить задачу", width=27, height=2, font="AvantGardeC 14",
-                   command=lambda: draw_solution(dots_list))
-    solut.place(x=30, y=685)
-
-    undo_but = Button(text="↩", width=5, height=1, font="AvantGardeC 14",
-                  command=lambda: undo())
-    undo_but.place(x=195, y=19)
-
-    k = 4
-    x_min = y_min = -320
-
-    draw_axies(x_min, y_min, 1, 'black')
-    draw_start_axies('black')
-    canvas_win.bind('<1>', click)
-
-    # Меню
-    mmenu = Menu(win)
-
-    add_menu = Menu(mmenu)
-    add_menu.add_command(label='О программе и авторе',
-                         command=lambda: messagebox.showinfo('О программе и авторе', TASK + AUTHOR))
-    add_menu.add_command(label='Выход', command=exit)
-    mmenu.add_cascade(label='Help', menu=add_menu)
-
-    win.config(menu=mmenu)
-
-    win.mainloop()
+# точка одна съезжает когда рядом с кругом ставить - масштабирование
+# откаты все!
+# расширять окно (как? изображение тоже едет?)
+# наведение на точку
