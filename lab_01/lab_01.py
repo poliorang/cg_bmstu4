@@ -125,7 +125,7 @@ def find_scale(points):
 
 # Функция для чтения координат точки, их обработки и добавления в множество
 def read_dot(place, dot_x, dot_y):
-    #try:
+    try:
         x = float(dot_x)
         y = float(dot_y)
         coords_dot = [x, y]
@@ -163,8 +163,8 @@ def read_dot(place, dot_x, dot_y):
 
 
         #actions.append(f'canvas_win.delete({points[-1]})+dots_list.pop({place})+dots_block.delete({place}, END)+canvas_win.delete({text[-1]}')
-    #except:
-    #    messagebox.showerror("Ошибка", "Неверно введены координаты точки")
+    except:
+       messagebox.showerror("Ошибка", "Неверно введены координаты точки")
 
 
 
@@ -286,6 +286,24 @@ def solution():
     diff = 100000
     outside_points = []
     inside_points = []
+    onside_points = []
+    cent = ()
+    radi = 0
+    one_line = 1
+
+    for three in combinations(dots_list, 3):
+        ax, ay = three[0][0], three[0][1]
+        bx, by = three[1][0], three[1][1]
+        cx, cy = three[2][0], three[2][1]
+
+        try:
+            if (cx - ax) / (bx - ax) != (cy - ay) / (by - ay):
+                one_line = 0
+        except ZeroDivisionError:
+            one_line = 0
+
+    if one_line:
+        return cent, radi, outside_points, inside_points, onside_points, one_line
 
     for three in combinations(dots_list, 3):
         inside = []
@@ -329,7 +347,7 @@ def solution():
             radi = radius
             cent = center
 
-    return cent, radi, outside_points, inside_points, onside_points
+    return cent, radi, outside_points, inside_points, onside_points, one_line
 
 
 # Прорисовка всех точек
@@ -358,10 +376,14 @@ def draw_solution():
         messagebox.showerror("Ошибка", "Недостаточно точек для построения")
         return
 
+    center, radius, outside_points, inside_points, onside_points, error = solution()
+    if error == 1:
+        messagebox.showerror("Ошибка", "Все точки лежат на одной прямой")
+        return
+
     canvas_win.delete("all")
     global coord_center, k, x_min, y_min, start_param
 
-    center, radius, outside_points, inside_points, onside_points = solution()
     all_points = dots_list.copy()
     all_points.append((center[0] - radius, center[1]))
     all_points.append((center[0] + radius, center[1]))
@@ -371,7 +393,7 @@ def draw_solution():
     start_param = 0
     k, x_min, y_min = find_scale(all_points)
     draw_axies(x_min, y_min, k, 'black')
-    print('sol ', x_min, y_min, k)
+    # print('sol ', x_min, y_min, k)
     draw_all_points(outside_points, x_min, y_min, k, 'pink', 'lightgreen')
     draw_all_points(inside_points, x_min, y_min, k, 'lightgreen', 'pink')
     draw_all_points(onside_points, x_min, y_min, k, 'black', 'pink')
@@ -484,8 +506,7 @@ win.config(menu=mmenu)
 
 win.mainloop()
 
-
-# точка одна съезжает когда рядом с кругом ставить - масштабирование
+# удаление при масштабировании
 # откаты все!
 # расширять окно (как? изображение тоже едет?)
 # наведение на точку
