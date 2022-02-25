@@ -119,27 +119,24 @@ def find_scale(points):
     k_x = (PLACE_TO_DRAW * SIZE) / (x_max - x_min)
     k_y = (PLACE_TO_DRAW * SIZE) / (y_max - y_min)
 
-    print('k ', k_x, k_y)
+    # print('k ', k_x, k_y)
     return min(k_x, k_y), x_min, y_min
 
 
 # Функция для чтения координат точки, их обработки и добавления в множество
 def read_dot(place, dot_x, dot_y):
     #try:
-        coords_dot = []
         x = float(dot_x)
         y = float(dot_y)
-        coords_dot.append(x)
-        coords_dot.append(y)
+        coords_dot = [x, y]
 
-        draw_all_points([(x, y)], -400 - x_min, -400 - y_min, k, 'pink', 'lightgreen')
-        print(x, y, -400 - x_min, -400 - y_min)
-        # x0, y0 = translate_point(x, -y, -80, -80, 4)
-        # canvas_win.create_oval(x0 + 2, y0 + 2, x0 - 2, y0 - 2,
-        #                        outline='pink', fill='pink', width=2, tag='dot')
-        #
-        # canvas_win.create_text(x0 + 15, y0 + 15, text="(%-3.1f; %-3.1f)" % (x, y),
-        #                        font="AvantGardeC 9", fill='black', tag='text')
+        global x_min, y_min, k, start_param
+
+        # костыль
+        if start_param:
+            draw_all_points([(x, y)], -400 - x_min, -400 - y_min, k, 'pink', 'lightgreen')
+        else:
+            draw_all_points([(x, y)], x_min, y_min, k, 'pink', 'lightgreen')
 
         if place != END:  # изменить точку
             point = canvas_win.find_withtag('dot')[place]
@@ -161,7 +158,6 @@ def read_dot(place, dot_x, dot_y):
 
         points = canvas_win.find_withtag('dot')
         dot_text = canvas_win.find_withtag('text')
-        # print(*dot_text)
         actions.append(f'canvas_win.delete({points[-1]})+dots_list.pop({place})+dots_block.delete({place}, END)+'
                        f'canvas_win.delete({dot_text[-1]})+actions.pop(-1)')
 
@@ -179,8 +175,6 @@ def add_dot():
     add_but = Button(dot_win, text="Добавить", font="AvantGardeC 14",
                      borderwidth=0, command=lambda: read_dot(END, dot_x.get(), dot_y.get()))
     add_but.place(x=40, y=120, relheight=0.15, relwidth=0.64)
-
-
 
     dot_win.mainloop()
 
@@ -207,25 +201,14 @@ def del_dot():
     try:
         place = dots_block.curselection()[0]
 
-        # print(place, ' list')
-
         points = canvas_win.find_withtag('dot')
-        print('coords ', canvas_win.coords(points[place]))
         dot_text = canvas_win.find_withtag('text')
 
         coords = dots_list.pop(place)
 
         x0, y0 = translate_point(coords[0], -coords[1], -80, -80, 4)
-        # for dot in points:
-        #     print(canvas_win.coords(dot)[0], x0, canvas_win.coords(dot)[1], y0)
-        #     if abs(canvas_win.coords(dot)[0] - x0) < 4 and abs(canvas_win.coords(dot)[1] - y0) < 4:
-        #         print('yep')
-        #         point = dot
-        # print(x0, y0)
-        x1, y1 = x0 - 2, y0 - 2
-        x2, y2 = x0 + 2, y0 + 2
-
-        # # coord_str = "(%-3.1f; %-3.1f)" % (coords[0], coords[1])
+        # x1, y1 = x0 - 2, y0 - 2
+        # x2, y2 = x0 + 2, y0 + 2
 
         actions.append(f'read_dot{END, coords[0], coords[1]}+actions.pop(-1)+actions.pop(-1)')
 
@@ -239,10 +222,6 @@ def del_dot():
             dots_list[i][2] = i + 1
             dots_block.insert(END, dot_str)
 
-
-        # del_all_dots(1)
-        # draw_all_points(dots_list, - (SIZE * INDENT_WIDTH), -80, k, 'pink', 'lightgreen')
-
     except:
         messagebox.showerror("Ошибка", "Не выбрана точка")
 
@@ -255,7 +234,8 @@ def del_all_dots(canvas_param):
         dots_block.delete(0, END)
         dots_list.clear()
         canvas_win.delete('all')
-        global k, x_min, y_min
+        global k, x_min, y_min, start_param
+        start_param = 1
         k = 4
         x_min = y_min = -320
         draw_axies(x_min, y_min, 1, 'black')
@@ -295,15 +275,8 @@ def click(event):
 
     global dots_block, dots_list, coord_center
 
-    # x1, y1 = (event.x - 2), (event.y - 2)
-    # x2, y2 = (event.x + 2), (event.y + 2)
-
     x = (event.x - coord_center[0]) / k
     y = (- event.y + coord_center[1]) / k
-
-    print('k ', k)
-
-    # draw_all_points([(event.x, event.y)], x_min, y_min, k, 'pink', 'lightgreen')
 
     read_dot(END, x, y)
 
@@ -386,7 +359,7 @@ def draw_solution():
         return
 
     canvas_win.delete("all")
-    global coord_center, k, x_min, y_min
+    global coord_center, k, x_min, y_min, start_param
 
     center, radius, outside_points, inside_points, onside_points = solution()
     all_points = dots_list.copy()
@@ -395,8 +368,10 @@ def draw_solution():
     all_points.append((center[0], center[1] - radius))
     all_points.append((center[0], center[1] + radius))
 
+    start_param = 0
     k, x_min, y_min = find_scale(all_points)
     draw_axies(x_min, y_min, k, 'black')
+    print('sol ', x_min, y_min, k)
     draw_all_points(outside_points, x_min, y_min, k, 'pink', 'lightgreen')
     draw_all_points(inside_points, x_min, y_min, k, 'lightgreen', 'pink')
     draw_all_points(onside_points, x_min, y_min, k, 'black', 'pink')
@@ -482,7 +457,14 @@ undo_but = Button(text="↩", width=5, height=1, font="AvantGardeC 14",
                   borderwidth=0, command=lambda: undo())
 undo_but.place(x=195, y=19)
 
+
+# 1 - если центр координат в центре канвы, 0 - иначе (костыль)
+start_param = 1
+
+# коэффициент масштабирования
 k = 4
+
+# крайняя нижняя левая точка
 x_min = y_min = -320
 
 draw_axies(x_min, y_min, 1, 'black')
