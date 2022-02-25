@@ -23,6 +23,23 @@ TASK = "На плоскости задано множество из N точе�
 AUTHOR = "Егорова Полина ИУ7-44Б"
 
 
+# Лежат ли все точки на одной прямой
+def on_same_line(dots_list):
+    one_line = 1
+    for three in combinations(dots_list, 3):
+        ax, ay = three[0][0], three[0][1]
+        bx, by = three[1][0], three[1][1]
+        cx, cy = three[2][0], three[2][1]
+
+        try:
+            if (cx - ax) / (bx - ax) != (cy - ay) / (by - ay):
+                one_line = 0
+        except ZeroDivisionError:
+            one_line = 0
+
+    return one_line
+
+
 # Точка пересечения прямых
 def line_intersection(line1, line2):
     x_coord = (line1[0][0] - line1[1][0], line2[0][0] - line2[1][0])
@@ -289,18 +306,7 @@ def solution():
     onside_points = []
     cent = ()
     radi = 0
-    one_line = 1
-
-    for three in combinations(dots_list, 3):
-        ax, ay = three[0][0], three[0][1]
-        bx, by = three[1][0], three[1][1]
-        cx, cy = three[2][0], three[2][1]
-
-        try:
-            if (cx - ax) / (bx - ax) != (cy - ay) / (by - ay):
-                one_line = 0
-        except ZeroDivisionError:
-            one_line = 0
+    one_line = on_same_line(dots_list)
 
     if one_line:
         return cent, radi, outside_points, inside_points, onside_points, one_line
