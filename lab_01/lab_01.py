@@ -92,7 +92,6 @@ def answer_win(center, radius, diff, count_inside, count_outside, onside):
 
 # Функция для нахождения коэффициента масштабирования
 def find_scale(points):
-
     x_min = points[0][0]
     y_min = points[0][1]
     x_max = points[0][0]
@@ -133,12 +132,14 @@ def read_dot(place, dot_x, dot_y):
         coords_dot.append(x)
         coords_dot.append(y)
 
-        x0, y0 = translate_point(x, -y, -80, -80, 4)
-        canvas_win.create_oval(x0 + 2, y0 + 2, x0 - 2, y0 - 2,
-                               outline='pink', fill='pink', width=2, tag='dot')
-
-        canvas_win.create_text(x0 + 15, y0 + 15, text="(%-3.1f; %-3.1f)" % (x, y),
-                               font="AvantGardeC 9", fill='black', tag='text')
+        draw_all_points([(x, y)], -400 - x_min, -400 - y_min, k, 'pink', 'lightgreen')
+        print(x, y, -400 - x_min, -400 - y_min)
+        # x0, y0 = translate_point(x, -y, -80, -80, 4)
+        # canvas_win.create_oval(x0 + 2, y0 + 2, x0 - 2, y0 - 2,
+        #                        outline='pink', fill='pink', width=2, tag='dot')
+        #
+        # canvas_win.create_text(x0 + 15, y0 + 15, text="(%-3.1f; %-3.1f)" % (x, y),
+        #                        font="AvantGardeC 9", fill='black', tag='text')
 
         if place != END:  # изменить точку
             point = canvas_win.find_withtag('dot')[place]
@@ -162,7 +163,7 @@ def read_dot(place, dot_x, dot_y):
         dot_text = canvas_win.find_withtag('text')
         # print(*dot_text)
         actions.append(f'canvas_win.delete({points[-1]})+dots_list.pop({place})+dots_block.delete({place}, END)+'
-                       f'canvas_win.delete({dot_text[-1]})')
+                       f'canvas_win.delete({dot_text[-1]})+actions.pop(-1)')
 
 
         #actions.append(f'canvas_win.delete({points[-1]})+dots_list.pop({place})+dots_block.delete({place}, END)+canvas_win.delete({text[-1]}')
@@ -209,7 +210,7 @@ def del_dot():
         # print(place, ' list')
 
         points = canvas_win.find_withtag('dot')
-        print(points)
+        print('coords ', canvas_win.coords(points[place]))
         dot_text = canvas_win.find_withtag('text')
 
         coords = dots_list.pop(place)
@@ -224,9 +225,9 @@ def del_dot():
         x1, y1 = x0 - 2, y0 - 2
         x2, y2 = x0 + 2, y0 + 2
 
-        coord_str = "(%-3.1f; %-3.1f)" % (coords[0], coords[1])
+        # # coord_str = "(%-3.1f; %-3.1f)" % (coords[0], coords[1])
 
-        actions.append(f'read_dot{END, coords[0], coords[1]}+')
+        actions.append(f'read_dot{END, coords[0], coords[1]}+actions.pop(-1)+actions.pop(-1)')
 
         # canvas_win.delete(point)
         canvas_win.delete(points[place])
@@ -254,7 +255,10 @@ def del_all_dots(canvas_param):
         dots_block.delete(0, END)
         dots_list.clear()
         canvas_win.delete('all')
-        draw_axies(-320, -320, 1, 'black')
+        global k, x_min, y_min
+        k = 4
+        x_min = y_min = -320
+        draw_axies(x_min, y_min, 1, 'black')
         draw_start_axies('black')
 
 
@@ -291,11 +295,15 @@ def click(event):
 
     global dots_block, dots_list, coord_center
 
-    x1, y1 = (event.x - 2), (event.y - 2)
-    x2, y2 = (event.x + 2), (event.y + 2)
+    # x1, y1 = (event.x - 2), (event.y - 2)
+    # x2, y2 = (event.x + 2), (event.y + 2)
 
     x = (event.x - coord_center[0]) / k
     y = (- event.y + coord_center[1]) / k
+
+    print('k ', k)
+
+    # draw_all_points([(event.x, event.y)], x_min, y_min, k, 'pink', 'lightgreen')
 
     read_dot(END, x, y)
 
@@ -354,15 +362,13 @@ def solution():
 # Прорисовка всех точек
 def draw_all_points(dots, x_min, y_min, k, color, color_active):
     for point in dots:
-        # print(point, end=' ')
         x0, y0 = translate_point(point[0], point[1], x_min, y_min, k)
-        # print(x0, y0, x_min, y_min, k)
         x1, y1 = (x0 - 2), (y0 - 2)
         x2, y2 = (x0 + 2), (y0 + 2)
         canvas_win.create_oval(x1, - y1 + SIZE, x2, - y2 + SIZE,
                                outline=color, fill=color, activeoutline=color_active, width=3, tag='dot')
         canvas_win.create_text(x0 + 15, -y0 + SIZE + 15, tag='text',
-                               text="(%.1f; %.1f)" % (point[0], point[1]), font="AvantGardeC 9", fill=color)
+                               text="(%.1f; %.1f)" % (point[0], point[1]), font="AvantGardeC 9", fill='black')
 
 
 # Координаты точки для масштабирования
@@ -380,7 +386,7 @@ def draw_solution():
         return
 
     canvas_win.delete("all")
-    global coord_center
+    global coord_center, k, x_min, y_min
 
     center, radius, outside_points, inside_points, onside_points = solution()
     all_points = dots_list.copy()
@@ -416,13 +422,15 @@ def draw_solution():
 
 # откат
 def undo():
-    # print(*actions, sep='\n')
-    # print('\n')
+    print(*actions, sep='\n')
+    print('\n')
     if '+' in actions[-1]:
         for act in actions[-1].split('+'):
             print(act)
             eval(act)
-    # a = actions.pop(-1)
+    print(*actions, sep='\n')
+    print('\n')
+    # actions.pop(-1)
     # print('a ', a)
     # print(actions[-1])
 
