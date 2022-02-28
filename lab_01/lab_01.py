@@ -177,12 +177,21 @@ def read_dot(place, dot_x, dot_y, click_param):
 
             new_d = canvas_win.find_withtag('dot')[-1]
             new_t = canvas_win.find_withtag('text')[-1]
-            actions.append(f'canvas_win.delete({new_t})+'
-                           f'canvas_win.delete({new_d})+'
-                           f'dots_list.pop({place})+'
-                           f'dots_block.delete({place})+'
-                           f'dots_block.insert{place, dot_str}+'
-                           f'draw_all_points{[(tmp_x, tmp_y)], (-400 - x_min), (-400 - y_min), k, "pink", "lightgreen"}')
+            if start_param:
+                actions.append(f'canvas_win.delete({new_t})+'
+                               f'canvas_win.delete({new_d})+'
+                               f'dots_list.pop({place})+'
+                               f'dots_block.delete({place})+'
+                               f'dots_block.insert{place, dot_str}+'
+                               f'draw_all_points{[(tmp_x, tmp_y)], (-400 - x_min), (-400 - y_min), k, "pink", "lightgreen", 0}')
+            else:
+                actions.append(f'canvas_win.delete({new_t})+'
+                               f'canvas_win.delete({new_d})+'
+                               f'dots_list.pop({place})+'
+                               f'dots_block.delete({place})+'
+                               f'dots_block.insert{place, dot_str}+'
+                               f'draw_all_points{[(tmp_x, tmp_y)], x_min, y_min, k, "pink", "lightgreen", 0}')
+
 
         else:  # добавить новую точку
             place = len(dots_list)
@@ -278,37 +287,41 @@ def del_all_dots(canvas_param):
 
 # Функция отрисовки подписей осей
 def draw_start_axies(color):
-    win_k = min(win_x, win_y)
-    canvas_win.create_text(795 * win_k, 400.5 * win_k, text="ᐳ", font="AvantGardeC 16", fill=color)
-    canvas_win.create_text(400.5 * win_k, 9 * win_k, text="ᐱ", font="AvantGardeC 16", fill=color)
-    canvas_win.create_text(763 * win_k, 413 * win_k, text="(100.0; 100.0) X", font="AvantGardeC 10", fill=color)
-    canvas_win.create_text(443 * win_k, 18 * win_k, text="Y\n(100.0; 100.0)", font="AvantGardeC 10", fill=color)
-    canvas_win.create_text(424 * win_k, 408 * win_k, text="(0.0; 0.0)", font="AvantGardeC 10", fill=color)
+    win_k_min = min(win_x, win_y)
+    win_k_max = max(win_x, win_y)
+    if win_k_max > 1.0:
+        win_k_max = 1.0
+    canvas_win.create_text(795 * win_k_min, 400.5 * win_k_min, text="ᐳ", font="AvantGardeC 16", fill=color)
+    canvas_win.create_text(400.5 * win_k_min, 9 * win_k_min, text="ᐱ", font="AvantGardeC 16", fill=color)
+    canvas_win.create_text(763 * win_k_min, 413 * win_k_min,
+                           text=f"(%3.1f, %3.1f) X" % (100.0 * win_k_max, 100.0 * win_k_max), font="AvantGardeC 10", fill=color)
+    canvas_win.create_text(443 * win_k_min, 18 * win_k_min,
+                           text=f"Y\n(%3.1f, %3.1f)" % (100.0 * win_k_max, 100.0 * win_k_max), font="AvantGardeC 10", fill=color)
+    canvas_win.create_text(424 * win_k_min, 408 * win_k_min, text="(0.0; 0.0)", font="AvantGardeC 10", fill=color)
 
 
 # Функция для отрисовки осей координат
 def draw_axies(x_min, y_min, k, color):
     win_k = min(win_x, win_y)
     x_x1, x_y1 = translate_point(SIZE * win_k, 0, x_min, y_min, k)
-    x_x2, x_y2 = translate_point(-(SIZE * win_k), 0, x_min, y_min, k)
+    x_x2, x_y2 = translate_point(-SIZE * win_k, 0, x_min, y_min, k)
 
     y_x1, y_y1 = translate_point(0, SIZE * win_k, x_min, y_min, k)
-    y_x2, y_y2 = translate_point(0, -(SIZE * win_k), x_min, y_min, k)
+    y_x2, y_y2 = translate_point(0, -SIZE * win_k, x_min, y_min, k)
 
     # canvas_win.create_line(-SIZE, -x_y1 + SIZE, SIZE, -x_y2 + SIZE, width=1, fill=color)
     # canvas_win.create_line(y_x1, -SIZE, y_x2, SIZE, width=1, fill=color)
 
-    print(win_x, win_y)
     canvas_win.delete('all')
-    canvas_win.create_line(-(SIZE * win_k), (SIZE - x_y1) * win_k, SIZE * win_k, (SIZE - x_y2) * win_k,
+    canvas_win.create_line(-SIZE * win_k, (SIZE * win_k - x_y1), SIZE * win_k, (SIZE * win_k - x_y2),
                            width=1, fill=color, tag='axies')
-    canvas_win.create_line(y_x1 * win_k, -(SIZE * win_k), y_x2 * win_k, SIZE * win_k,
+    canvas_win.create_line(y_x1, -SIZE * win_k, y_x2, SIZE * win_k,
                            width=1, fill=color, tag='axies')
 
     global coord_center
 
     x, y = line_intersection([(x_x1, x_y1), (x_x2, x_y2)], [(y_x1, y_y1), (y_x2, y_y2)])
-    coord_center = x * win_k, (SIZE - y) * win_k
+    coord_center = x, (SIZE - y)
 
 
 # Определение и запись координат точки по клику
@@ -386,22 +399,24 @@ def solution():
 
 # Прорисовка всех точек
 def draw_all_points(dots, x_min, y_min, k, color, color_active, click_param):
+    win_k = min(win_x, win_y)
     for point in dots:
         x0, y0 = translate_point(point[0], point[1], x_min, y_min, k)
 
         if click_param == 0:
-            x1, y1 = (x0 - 2), (y0 - 2)
-            x2, y2 = (x0 + 2), (y0 + 2)
-            canvas_win.create_oval(x1, - y1 + SIZE, x2, - y2 + SIZE,
+            x1, y1 = (x0 - 2 * win_k), (y0 - 2 * win_k)
+            x2, y2 = (x0 + 2 * win_k), (y0 + 2 * win_k)
+            canvas_win.create_oval(x1, -y1 + (SIZE * win_k), x2, -y2 + (SIZE * win_k),
                                    outline=color, fill=color, activeoutline=color_active, width=3, tag='dot')
-        canvas_win.create_text((x0 + 15) * win_x, (-y0 + SIZE + 15) * win_y, tag='text',
+        canvas_win.create_text(x0 + 15 * win_k, -y0 + SIZE * win_k + 15 * win_k, tag='text',
                                text="(%.1f; %.1f)" % (point[0], point[1]), font="AvantGardeC 9", fill='black')
 
 
 # Координаты точки для масштабирования
 def translate_point(x, y, x_min, y_min, k):
-    x = INDENT_WIDTH * SIZE + (x - x_min) * k
-    y = INDENT_WIDTH * SIZE + (y - y_min) * k
+    win_k = min(win_x, win_y)
+    x = INDENT_WIDTH * SIZE * win_k + (x - x_min) * k * win_k
+    y = INDENT_WIDTH * SIZE * win_k + (y - y_min) * k * win_k
 
     return x, y
 
@@ -429,6 +444,7 @@ def draw_solution():
     start_param = 0
     k, x_min, y_min = find_scale(all_points)
     draw_axies(x_min, y_min, k, 'black')
+    win_k = min(win_x, win_y)
     # print('sol ', x_min, y_min, k)
     draw_all_points(outside_points, x_min, y_min, k, 'pink', 'lightgreen', 0)
     draw_all_points(inside_points, x_min, y_min, k, 'lightgreen', 'pink', 0)
@@ -437,13 +453,14 @@ def draw_solution():
     # Окружность
     x1, y1 = translate_point(center[0] - radius, center[1] + radius, x_min, y_min, k)
     x2, y2 = translate_point(center[0] + radius, center[1] - radius, x_min, y_min, k)
-    canvas_win.create_oval(x1, - y1 + SIZE, x2, - y2 + SIZE,
+    canvas_win.create_oval(x1 * win_k, (- y1 + SIZE) * win_k, x2 * win_k, (-y2 + SIZE) * win_k,
                            activeoutline='lightgreen', outline='grey', width=3, tag='oval')
 
     # Центр окружности
     cx1, cy1 = translate_point(center[0] - 0.01 * k, center[1] + 0.01 * k, x_min, y_min, k)
     cx2, cy2 = translate_point(center[0] + 0.01 * k, center[1] - 0.01 * k, x_min, y_min, k)
-    canvas_win.create_oval(cx1, - cy1 + SIZE, cx2, - cy2 + SIZE, outline='grey', width=1, tag='cent')
+    canvas_win.create_oval(cx1 * win_k, (-cy1 + SIZE) * win_k, cx2 * win_k, (-cy2 + SIZE) * win_k,
+                           outline='grey', width=1, tag='cent')
 
     ovals = canvas_win.find_withtag('oval')
     centers = canvas_win.find_withtag('cent')
