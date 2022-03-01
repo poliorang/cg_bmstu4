@@ -143,7 +143,7 @@ def find_scale(points):
 # Функция для чтения координат точки, их обработки и добавления в множество
 def read_dot(place, dot_x, dot_y, click_param):
     try:
-        global x_min, y_min, k, start_param, win_x, win_y
+        global x_min, y_min, k, start_param, win_k
 
         x = float(dot_x)
         y = float(dot_y)
@@ -249,15 +249,25 @@ def del_dot():
 
         coords = dots_list.pop(place)
 
-        x0, y0 = translate_point(coords[0], -coords[1], -80, -80, 4)
-        # x1, y1 = x0 - 2, y0 - 2
-        # x2, y2 = x0 + 2, y0 + 2
-
         actions.append(f'read_dot{END, coords[0], coords[1], 0}+actions.pop(-1)+actions.pop(-1)')
 
-        # canvas_win.delete(point)
-        canvas_win.delete(points[place])
-        canvas_win.delete(dot_text[place])
+        # получение из листбокса координат точки
+        num1 = str(dots_block.get(place))[5:-1].split(';')
+        num1_1 = float(num1[0])
+        num1_2 = float(num1[1][1:])
+
+        # найти точку для удаления с канваса, соотнеся координаты из листбокса и с канваса
+        for dot in dot_text:
+            # получение координат точки как объекта канваса
+            num2 = str(canvas_win.itemconfig(dot)['text'][-1][1:-1]).split(';')
+            num2_1 = float(num2[0])
+            num2_2 = float(num2[1][1:])
+
+            if num1_1 == num2_1 and num1_2 == num2_2:
+                canvas_win.delete(dot)
+                canvas_win.delete(points[dot_text.index(dot)])
+                break
+
         dots_block.delete(0, END)
 
         for i in range(len(dots_list)):
@@ -321,14 +331,15 @@ def draw_axies(x_min, y_min, k, color):
 
 # Определение и запись координат точки по клику
 def click(event):
-    if event.x < 0 or event.x > WIN_WIDTH or event.y < 0 or event.y > WIN_HEIGHT:
+    if event.x < 0 or event.x > WIN_WIDTH * win_k or event.y < 0 or event.y > WIN_HEIGHT * win_k:
         return
 
-    print(event.x, event.y)
-    global dots_block, dots_list, coord_center
 
-    x = (event.x - coord_center[0]) * win_k / k
-    y = (- event.y + coord_center[1]) * win_k / k
+    global dots_block, dots_list, coord_center
+    print('event ', -(event.x - coord_center[0]), -(event.y - coord_center[1]))
+
+    x = (event.x - coord_center[0]) / k
+    y = (-event.y + coord_center[1]) / k
     # canvas_win.create_oval(event.x - 2, event.y - 2, event.x + 2, event.y + 2,
     #                        outline='pink', fill='pink', activeoutline='lightgreen', width=3, tag='dot')
     read_dot(END, x, y, 1)
@@ -400,6 +411,7 @@ def draw_all_points(dots, x_min, y_min, k, color, color_active, click_param):
         # if click_param == 0:
         x1, y1 = (x0 - 2 * win_k), (y0 - 2 * win_k)
         x2, y2 = (x0 + 2 * win_k), (y0 + 2 * win_k)
+        print(x1, -y1 + (SIZE * win_k), x2, -y2 + (SIZE * win_k))
         canvas_win.create_oval(x1, -y1 + (SIZE * win_k), x2, -y2 + (SIZE * win_k),
                                outline=color, fill=color, activeoutline=color_active, width=3, tag='dot')
         canvas_win.create_text(x0 + 15 * win_k, -y0 + SIZE * win_k + 15 * win_k, tag='text',
@@ -408,8 +420,8 @@ def draw_all_points(dots, x_min, y_min, k, color, color_active, click_param):
 
 # Координаты точки для масштабирования
 def translate_point(x, y, x_min, y_min, k):
-    x = INDENT_WIDTH * SIZE * win_k + (x - x_min) * k * win_k
-    y = INDENT_WIDTH * SIZE * win_k + (y - y_min) * k * win_k
+    x = (INDENT_WIDTH * SIZE + (x - x_min) * k) * win_k
+    y = (INDENT_WIDTH * SIZE + (y - y_min) * k) * win_k
 
     return x, y
 
@@ -445,13 +457,13 @@ def draw_solution():
     # Окружность
     x1, y1 = translate_point(center[0] - radius, center[1] + radius, x_min, y_min, k)
     x2, y2 = translate_point(center[0] + radius, center[1] - radius, x_min, y_min, k)
-    canvas_win.create_oval(x1, -y1 + SIZE, x2, (-y2 + SIZE),
+    canvas_win.create_oval(x1, -y1 + SIZE * win_k, x2, (-y2 + SIZE * win_k),
                            activeoutline='lightgreen', outline='grey', width=3, tag='oval')
 
     # Центр окружности
     cx1, cy1 = translate_point(center[0] - 0.01 * k, center[1] + 0.01 * k, x_min, y_min, k)
     cx2, cy2 = translate_point(center[0] + 0.01 * k, center[1] - 0.01 * k, x_min, y_min, k)
-    canvas_win.create_oval(cx1 * win_k, (-cy1 + SIZE) * win_k, cx2 * win_k, (-cy2 + SIZE) * win_k,
+    canvas_win.create_oval(cx1, -cy1 + SIZE * win_k, cx2, -cy2 + SIZE * win_k,
                            outline='grey', width=1, tag='cent')
 
     ovals = canvas_win.find_withtag('oval')
@@ -486,6 +498,7 @@ def config(event):
         win_y = (win.winfo_height() + 35)/WIN_HEIGHT
         win_k = min(win_x, win_y)
 
+        print(win_x, win_y)
         # print(win_x, win_y)
         canvas_win.place(x=300 * win_x, y=0 * win_y, width=SIZE * win_k, height=SIZE * win_k)
 
