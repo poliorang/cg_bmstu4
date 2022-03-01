@@ -160,16 +160,27 @@ def read_dot(place, dot_x, dot_y, click_param):
         dot_text = canvas_win.find_withtag('text')
 
         if place != END:  # изменить точку
-            point = points[place]
-            text = dot_text[place]
+            # получение из листбокса координат точки
+            num1 = str(dots_block.get(place))[5:-1].split(';')
+            num1_1 = float(num1[0])
+            num1_2 = float(num1[1][1:])
+
+            # найти точку для удаления с канваса, соотнеся координаты из листбокса и с канваса
+            for dot in dot_text:
+                # получение координат точки как объекта канваса
+                num2 = str(canvas_win.itemconfig(dot)['text'][-1][1:-1]).split(';')
+                num2_1 = float(num2[0])
+                num2_2 = float(num2[1][1:])
+
+                if num1_1 == num2_1 and num1_2 == num2_2:
+                    canvas_win.delete(dot)
+                    canvas_win.delete(points[dot_text.index(dot)])
+                    break
 
             tmp_x, tmp_y = dots_list[place][0], dots_list[place][1]
-            # print(tmp_x, tmp_y)
 
             dot_str = "%d : (%-3.1f; %-3.1f)" % (place + 1, tmp_x, tmp_y)
 
-            canvas_win.delete(point)
-            canvas_win.delete(text)
             dots_block.delete(place)
             dots_list.pop(place)
             coords_dot.append(place + 1)
@@ -334,9 +345,7 @@ def click(event):
     if event.x < 0 or event.x > WIN_WIDTH * win_k or event.y < 0 or event.y > WIN_HEIGHT * win_k:
         return
 
-
     global dots_block, dots_list, coord_center
-    print('event ', -(event.x - coord_center[0]), -(event.y - coord_center[1]))
 
     x = (event.x - coord_center[0]) / k
     y = (-event.y + coord_center[1]) / k
