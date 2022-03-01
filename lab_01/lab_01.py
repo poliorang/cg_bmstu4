@@ -152,7 +152,6 @@ def read_dot(place, dot_x, dot_y, click_param):
         # костыль
         if start_param:
             draw_all_points([(x, y)], (-400 - x_min), (-400 - y_min), k, 'pink', 'lightgreen', click_param)
-            # draw_all_points([(x, y)], (-400 - x_min), (-403 - y_min), k, 'pink', 'lightgreen')
         else:
             draw_all_points([(x, y)], x_min, y_min, k, 'pink', 'lightgreen', click_param)
 
@@ -191,18 +190,19 @@ def read_dot(place, dot_x, dot_y, click_param):
             if start_param:
                 actions.append(f'canvas_win.delete({new_t})+'
                                f'canvas_win.delete({new_d})+'
-                               f'dots_list.pop({place})+'
+                               # f'dots_list.pop({place})+'
                                f'dots_block.delete({place})+'
                                f'dots_block.insert{place, dot_str}+'
-                               f'draw_all_points{[(tmp_x, tmp_y)], (-400 - x_min), (-400 - y_min), k, "pink", "lightgreen", 0}')
+                               f'draw_all_points{[(tmp_x, tmp_y)], (-400 - x_min), (-400 - y_min), k, "pink", "lightgreen", 0}+'
+                               f'actions.pop(-1)+')
             else:
                 actions.append(f'canvas_win.delete({new_t})+'
                                f'canvas_win.delete({new_d})+'
-                               f'dots_list.pop({place})+'
+                               # f'dots_list.pop({place})+'
                                f'dots_block.delete({place})+'
                                f'dots_block.insert{place, dot_str}+'
-                               f'draw_all_points{[(tmp_x, tmp_y)], x_min, y_min, k, "pink", "lightgreen", 0}')
-
+                               f'draw_all_points{[(tmp_x, tmp_y)], x_min, y_min, k, "pink", "lightgreen", 0}+'
+                               f'actions.pop(-1)+')
 
         else:  # добавить новую точку
             place = len(dots_list)
@@ -210,16 +210,13 @@ def read_dot(place, dot_x, dot_y, click_param):
             dots_list.append(coords_dot)
 
             actions.append(f'canvas_win.delete({points[-1]})+dots_list.pop({place})+dots_block.delete({place}, END)+'
-                           f'canvas_win.delete({dot_text[-1]})+actions.pop(-1)')
-
+                           f'canvas_win.delete({dot_text[-1]})+actions.pop(-1)+')
 
         dot_str = "%d : (%-3.1f; %-3.1f)" % (place + 1, x, y)
         dots_block.insert(place, dot_str)
 
-        #actions.append(f'canvas_win.delete({points[-1]})+dots_list.pop({place})+dots_block.delete({place}, END)+canvas_win.delete({text[-1]}')
     except:
        messagebox.showerror("Ошибка", "Неверно введены координаты точки")
-
 
 
 # Функция для добавления точки в множество
@@ -295,9 +292,15 @@ def del_all_dots(canvas_param):
     if canvas_param:
         canvas_win.delete('dot')
     else:
+        str_eval = ""
+        for dot in dots_list:
+            str_eval += f'read_dot{END, dot[0], dot[1], 0}+'
+        actions.append(str_eval)
+
         dots_block.delete(0, END)
         dots_list.clear()
         canvas_win.delete('all')
+
         global k, x_min, y_min, start_param
         start_param = 1
         k = 4
@@ -308,13 +311,13 @@ def del_all_dots(canvas_param):
 
 # Функция отрисовки подписей осей
 def draw_start_axies(color):
-    canvas_win.create_text(795 * win_k, 400.5 * win_k, text="ᐳ", font="AvantGardeC 16", fill=color)
-    canvas_win.create_text(400.5 * win_k, 9 * win_k, text="ᐱ", font="AvantGardeC 16", fill=color)
+    canvas_win.create_text(795 * win_k, 400.5 * win_k, text="ᐳ", font="AvantGardeC 16", fill=color, tag='start')
+    canvas_win.create_text(400.5 * win_k, 9 * win_k, text="ᐱ", font="AvantGardeC 16", fill=color, tag='start')
     canvas_win.create_text(763 * win_k, 413 * win_k,
-                           text=f"(%3.1f, %3.1f) X" % (100.0, 100.0), font="AvantGardeC 10", fill=color)
+                           text=f"(%3.1f, %3.1f) X" % (100.0, 100.0), font="AvantGardeC 10", fill=color, tag='start')
     canvas_win.create_text(443 * win_k, 18 * win_k,
-                           text=f"Y\n(%3.1f, %3.1f)" % (100.0, 100.0), font="AvantGardeC 10", fill=color)
-    canvas_win.create_text(424 * win_k, 408 * win_k, text="(0.0; 0.0)", font="AvantGardeC 10", fill=color)
+                           text=f"Y\n(%3.1f, %3.1f)" % (100.0, 100.0), font="AvantGardeC 10", fill=color, tag='start')
+    canvas_win.create_text(424 * win_k, 408 * win_k, text="(0.0; 0.0)", font="AvantGardeC 10", fill=color, tag='start')
 
 
 # Функция для отрисовки осей координат
@@ -328,6 +331,7 @@ def draw_axies(x_min, y_min, k, color):
     # canvas_win.create_line(-SIZE, -x_y1 + SIZE, SIZE, -x_y2 + SIZE, width=1, fill=color)
     # canvas_win.create_line(y_x1, -SIZE, y_x2, SIZE, width=1, fill=color)
 
+    # canvas_win.delete('axies', 'start')
     canvas_win.delete('all')
     canvas_win.create_line(-SIZE * win_k, (SIZE * win_k - x_y1), SIZE * win_k, (SIZE * win_k - x_y2),
                            width=1, fill=color, tag='axies')
@@ -338,6 +342,8 @@ def draw_axies(x_min, y_min, k, color):
 
     x, y = line_intersection([(x_x1, x_y1), (x_x2, x_y2)], [(y_x1, y_y1), (y_x2, y_y2)])
     coord_center = x * win_k, (SIZE - y) * win_k
+
+    # draw_all_points(dots_list, x_min, y_min, k, 'pink', 'lightgreen', 0)
 
 
 # Определение и запись координат точки по клику
@@ -417,7 +423,6 @@ def draw_all_points(dots, x_min, y_min, k, color, color_active, click_param):
     for point in dots:
         x0, y0 = translate_point(point[0], point[1], x_min, y_min, k)
 
-        # if click_param == 0:
         x1, y1 = (x0 - 2 * win_k), (y0 - 2 * win_k)
         x2, y2 = (x0 + 2 * win_k), (y0 + 2 * win_k)
         print(x1, -y1 + (SIZE * win_k), x2, -y2 + (SIZE * win_k))
@@ -485,8 +490,8 @@ def draw_solution():
 
 # откат
 def undo():
-    print(*actions, sep='\n')
-    print('\n')
+    # print(*actions, sep='\n')
+    # print('\n')
     if '+' in actions[-1]:
         for act in actions[-1].split('+'):
             print(act)
@@ -501,13 +506,11 @@ def undo():
 # Растягивание окна
 def config(event):
     if event.widget == win:
-
         global win_x, win_y, win_k
         win_x = win.winfo_width()/WIN_WIDTH
         win_y = (win.winfo_height() + 35)/WIN_HEIGHT
         win_k = min(win_x, win_y)
 
-        print(win_x, win_y)
         # print(win_x, win_y)
         canvas_win.place(x=300 * win_x, y=0 * win_y, width=SIZE * win_k, height=SIZE * win_k)
 
@@ -543,6 +546,7 @@ dots_label = Label(text="Координаты точек", bg='pink', font=f"Ava
 
 # Список и блок точек
 dots_list = []
+dots_list_copy = []
 dots_block = Listbox(bg="#ffffff")
 dots_block.configure(font="AvantGardeC 14", fg='black')
 
