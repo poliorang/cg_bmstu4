@@ -12,11 +12,7 @@ WIN_WIDTH = 1200
 WIN_HEIGHT = 800
 
 SIZE = 800
-
 WIDTH = 100.0
-
-PLACE_TO_DRAW = 0.8
-INDENT_WIDTH = 0.1
 
 TASK = "На плоскости задано множество из N точек. Определить радиус и центр такой окружности, " \
        "проходящей через ровно три различные точки заданного множества точек на плоскости, " \
@@ -40,24 +36,6 @@ def on_same_line(dots_list):
             one_line = 0
 
     return one_line
-
-
-# Точка пересечения прямых
-def line_intersection(line1, line2):
-    x_coord = (line1[0][0] - line1[1][0], line2[0][0] - line2[1][0])
-    y_coord = (line1[0][1] - line1[1][1], line2[0][1] - line2[1][1])
-
-    def det(a, b):
-        return a[0] * b[1] - a[1] * b[0]
-
-    div = det(x_coord, y_coord)
-    if div == 0:
-       return
-
-    d = (det(*line1), det(*line2))
-    x = det(d, x_coord) / div
-    y = det(d, y_coord) / div
-    return x, y
 
 
 # Расстояние между точками
@@ -236,7 +214,17 @@ def read_dot(place, dot_x, dot_y, canva_or_hand):
         dot_str = "%d : (%-3.1f; %-3.1f)" % (place + 1, fact_x_y[0], fact_x_y[1])
         dots_block.insert(place, dot_str)
 
-        print(dots_list)
+        if fact_x_y[0] > size / m or fact_x_y[0] > size / m:
+            border = find_scale(dots_list)
+            ten_percent = size / 100 * 10
+            m = size / (2 * border + ten_percent)
+            start_param = 1
+
+            canvas_win.delete("all")
+            draw_axies()
+            draw_all_dots(dots_list, 'pink', 'lightgreen')
+            if start_param:
+                draw_circle(*circle)
 
     except:
        messagebox.showerror("Ошибка", "Неверно введены координаты точки")
@@ -315,14 +303,19 @@ def del_all_dots(canvas_param):
     if canvas_param:
         canvas_win.delete('dot')
     else:
-        global size, m, start_param
-        start_param = 0
+        global size, m, start_param, circle, border
+
+        circle = [(0, 0), 0]
+        border = WIDTH
         size = SIZE * win_k
         m = size / (2 * WIDTH)
         str_eval = ""
         for dot in dots_list:
             str_eval += f'read_dot{END, dot[0], dot[1], 0}+'
+        if start_param:
+            str_eval += 'draw_solution()+'
         actions.append(str_eval)
+        start_param = 0
 
         dots_block.delete(0, END)
         dots_list.clear()
@@ -345,7 +338,7 @@ def draw_start_axies():
 
 # Функция для отрисовки осей координат
 def draw_axies():
-    global size, coord_center
+    global size
     canvas_win.delete('all')
     canvas_win.create_line(0, size / 2, size, size / 2,
                            width=1, fill='black', tag='axies')
@@ -430,7 +423,7 @@ def draw_solution():
         messagebox.showerror("Ошибка", "Все точки лежат на одной прямой")
         return
 
-    global coord_center, m, size, start_param, circle
+    global coord_center, m, size, start_param, circle, border, ten_percent
 
     all_points = dots_list.copy()
     all_points.append((center[0] - radius, center[1]))
@@ -452,17 +445,15 @@ def draw_solution():
 
     # Окружность
     circle = draw_circle(center, radius)
-    # c_x_1, c_y_1 = to_canva((center[0] - radius, center[1] - radius))
-    # c_x_2, c_y_2 = to_canva((center[0] + radius, center[1] + radius))
-    # circle = [c_x_1, c_y_1, c_x_2, c_y_2]
-    # canvas_win.create_oval(*circle, activeoutline='lightgreen', outline='grey', width=3, tag='oval')
+    print(circle)
 
     ovals = canvas_win.find_withtag('oval')
-    centers = canvas_win.find_withtag('cent')
-    actions.append(f'canvas_win.delete({ovals[-1]})+canvas_win.delete({centers[-1]})')
+    actions.append(f'canvas_win.delete{ovals[-1]}')
 
     answer_win(center, radius, abs(len(outside_points) - len(inside_points)),
            len(outside_points), len(inside_points), onside_points)
+
+    actions.append(f'canvas_win.delete({ovals[-1]})+')
 
 
 # откат
@@ -490,11 +481,9 @@ def config(event):
         win_k = min(win_x, win_y)
 
         size = SIZE * win_k
-        if start_param == 0:
-            m = size / (2 * WIDTH)
+        m = size / (2 * border + ten_percent)
 
-
-        canvas_win.place(x=300 * win_x, y=0 * win_y, width=SIZE * win_k, height=SIZE * win_k)
+        canvas_win.place(x=300 * win_x, y=0 * win_y, width=size, height=size)
 
         dots_label.place(x=47 * win_x, y=18 * win_y, width=137 * win_x, height=24 * win_y)
         dots_block.place(x=30 * win_x, y=55 * win_y, width=237 * win_x, height=450 * win_y)
@@ -508,9 +497,12 @@ def config(event):
         und.place(x=195 * win_x, y=18 * win_y, width=65 * win_x, height=24 * win_y)
 
         draw_axies()
-        draw_start_axies()
+        if start_param == 0:
+            draw_start_axies()
+        else:
+            draw_circle(*circle)
+
         draw_all_dots(dots_list, 'pink', 'lightgreen')
-        draw_circle(circle)
 
         coord_center = [size / 2, size / 2]
 
@@ -520,7 +512,6 @@ win = Tk()
 win['bg'] = 'grey'
 win.geometry("%dx%d" % (WIN_WIDTH, WIN_HEIGHT))
 win.title("Лабораторная работа #1")
-# win.resizable(False, False)
 
 win_x = win_y = win_k = 1
 
@@ -552,12 +543,14 @@ sol = Button(text="Решить задачу", font="AvantGardeC 14",
 und = Button(text="↩", font="AvantGardeC 14",
              borderwidth=0, command=lambda: undo())
 
-
 win_k = 1
 
 size = SIZE
-m = size * win_k / WIDTH
-circle = [(0, 0), (0, 0)]
+border = WIDTH # граница
+ten_percent = 0 # 10% от величины границы
+m = size * win_k / border
+circle = [(0, 0), 0]
+
 start_param = 0 # пока не было увеличения или уменьшения, чтобы при изменении размера окна не ехало
 canvas_win.bind('<1>', click)
 
@@ -569,7 +562,6 @@ add_menu.add_command(label='О программе и авторе',
 add_menu.add_command(label='Выход', command=exit)
 menu.add_cascade(label='Help', menu=add_menu)
 win.config(menu=menu)
-
 
 win.bind("<Configure>", config)
 
