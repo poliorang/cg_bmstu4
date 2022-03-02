@@ -5,9 +5,6 @@ from math import sqrt
 
 from itertools import combinations
 
-coord_center = [400, 400]
-actions = []
-
 WIN_WIDTH = 1200
 WIN_HEIGHT = 800
 
@@ -87,7 +84,7 @@ def answer_win(center, radius, diff, count_inside, count_outside, onside):
     ans_label.place(x=40, y=30)
 
 
-# Функция для нахождения коэффициента масштабирования
+# нахождение коэффициента масштабирования
 def find_scale(dots):
     x_min = dots[0][0]
     y_min = dots[0][1]
@@ -123,9 +120,11 @@ def to_canva(dot):
     global m
     x = coord_center[0] + dot[0] * m
     y = coord_center[1] - dot[1] * m
+
     return [x, y]
 
 
+# прорисовка точек
 def draw_all_dots(dots, color, color_active):
     for dot in dots:
         x0, y0 = to_canva(dot)
@@ -458,17 +457,12 @@ def draw_solution():
 
 # откат
 def undo():
-    # print(*actions, sep='\n')
-    # print('\n')
     if '+' in actions[-1]:
         for act in actions[-1].split('+'):
-            print(act)
+            # print(act)
             eval(act)
-    print(*actions, sep='\n')
-    print('\n')
-    # actions.pop(-1)
-    # print('a ', a)
-    # print(actions[-1])
+    # print(*actions, sep='\n')
+    # print('\n')
 
 
 # Растягивание окна
@@ -513,8 +507,6 @@ win['bg'] = 'grey'
 win.geometry("%dx%d" % (WIN_WIDTH, WIN_HEIGHT))
 win.title("Лабораторная работа #1")
 
-win_x = win_y = win_k = 1
-
 # Канвас
 canvas_win = Canvas(win, bg="#ffffff")
 
@@ -543,15 +535,17 @@ sol = Button(text="Решить задачу", font="AvantGardeC 14",
 und = Button(text="↩", font="AvantGardeC 14",
              borderwidth=0, command=lambda: undo())
 
-win_k = 1
-
-size = SIZE
-border = WIDTH # граница
+win_x = win_y = 1 # коэффициенты масштабирования окна по осям
+win_k = 1 # коэффициент масштабирования окна (для квадратизации)
+size = SIZE # текущая длина/ширина (они равны) канваса
+border = WIDTH # граница (максимальная видимая координата на канвасе)
 ten_percent = 0 # 10% от величины границы
-m = size * win_k / border
-circle = [(0, 0), 0]
-
+m = size * win_k / border # коэффициент масштабирования канваса
+circle = [(0, 0), 0] # центр и радиус окружности-решения
+coord_center = [400, 400] # центр координат (в координатах канваса)
+actions = [] # возврат действия для undo
 start_param = 0 # пока не было увеличения или уменьшения, чтобы при изменении размера окна не ехало
+
 canvas_win.bind('<1>', click)
 
 # Меню
@@ -566,8 +560,3 @@ win.config(menu=menu)
 win.bind("<Configure>", config)
 
 win.mainloop()
-
-# удаление при масштабировании
-# откаты все!
-# расширять окно (как? изображение тоже едет?)
-# наведение на точку
