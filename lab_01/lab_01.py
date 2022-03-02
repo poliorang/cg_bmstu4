@@ -1,4 +1,3 @@
-from tkinter import Tk, Button, Label, Entry, END, Listbox, Canvas
 from tkinter import messagebox
 from tkinter import *
 from math import sqrt
@@ -19,7 +18,7 @@ AUTHOR = "Егорова Полина ИУ7-44Б"
 
 
 # Лежат ли все точки на одной прямой
-def on_same_line(dots_list):
+def on_same_line():
     one_line = 1
     for three in combinations(dots_list, 3):
         ax, ay = three[0][0], three[0][1]
@@ -78,8 +77,8 @@ def answer_win(center, radius, diff, count_inside, count_outside, onside):
                            "Количество точек внутри окружности  ->  %d\n"
                            "Количество точек вне окружности  ->  %d\n"
                            "Разница количеств  ->  %d" % (center[0], center[1], radius, onside[0][0], onside[0][1],
-                                                        onside[1][0], onside[1][1], onside[2][0], onside[2][1],
-                                                        count_inside, count_outside, diff),
+                                                          onside[1][0], onside[1][1], onside[2][0], onside[2][1],
+                                                          count_inside, count_outside, diff),
                       bg="pink", justify='left', font="AvantGardeC 14", fg='black')
     ans_label.place(x=40, y=30)
 
@@ -128,7 +127,6 @@ def to_canva(dot):
 def draw_all_dots(dots, color, color_active):
     for dot in dots:
         x0, y0 = to_canva(dot)
-        print(x0, y0, coord_center)
         x1, y1 = (x0 - 2), (y0 - 2)
         x2, y2 = (x0 + 2), (y0 + 2)
 
@@ -139,6 +137,7 @@ def draw_all_dots(dots, color, color_active):
                                text="(%.1f; %.1f)" % (dot[0], dot[1]), font="AvantGardeC 9", fill='black')
 
 
+# прорисовка окружности-решения
 def draw_circle(center, radius):
     c_x_1, c_y_1 = to_canva((center[0] - radius, center[1] - radius))
     c_x_2, c_y_2 = to_canva((center[0] + radius, center[1] + radius))
@@ -148,7 +147,7 @@ def draw_circle(center, radius):
     return [center, radius]
 
 
-# Функция для чтения координат точки, их обработки и добавления в множество
+# чтение координат точки, их обработки и добавления в множество
 def read_dot(place, dot_x, dot_y, canva_or_hand):
     try:
         global win_k, m
@@ -193,13 +192,12 @@ def read_dot(place, dot_x, dot_y, canva_or_hand):
 
             new_d = canvas_win.find_withtag('dot')[-1]
             new_t = canvas_win.find_withtag('text')[-1]
+            actions.clear()
             actions.append(f'canvas_win.delete({new_t})+'
                            f'canvas_win.delete({new_d})+'
-                           # f'dots_list.pop({place})+'
                            f'dots_block.delete({place})+'
                            f'dots_block.insert{place, dot_str}+'
-                           f'draw_all_dots{[(tmp_x, tmp_y)], "pink", "lightgreen"}+'
-                           f'actions.pop(-1)+')
+                           f'draw_all_dots{[(tmp_x, tmp_y)], "pink", "lightgreen"}')
 
 
         else:  # добавить новую точку
@@ -207,8 +205,11 @@ def read_dot(place, dot_x, dot_y, canva_or_hand):
             fact_x_y.append(place + 1)
             dots_list.append(fact_x_y)
 
-            actions.append(f'canvas_win.delete({points[-1]})+dots_list.pop({place})+dots_block.delete({place}, END)+'
-                           f'canvas_win.delete({dot_text[-1]})+actions.pop(-1)+')
+            actions.clear()
+            actions.append(f'canvas_win.delete({points[-1]})+'
+                           f'dots_list.pop({place})+'
+                           f'dots_block.delete({place}, END)+'
+                           f'canvas_win.delete({dot_text[-1]})')
 
         dot_str = "%d : (%-3.1f; %-3.1f)" % (place + 1, fact_x_y[0], fact_x_y[1])
         dots_block.insert(place, dot_str)
@@ -229,7 +230,7 @@ def read_dot(place, dot_x, dot_y, canva_or_hand):
        messagebox.showerror("Ошибка", "Неверно введены координаты точки")
 
 
-# Функция для добавления точки в множество
+# добавление точки в множество
 def add_dot():
     dot_win, dot_x, dot_y = dots_win()
 
@@ -240,7 +241,7 @@ def add_dot():
     dot_win.mainloop()
 
 
-# Функция для изменения координат точки выбранного множества
+# изменение координат точки выбранного множества
 def change_dot():
     try:
         place = dots_block.curselection()[0]
@@ -257,7 +258,7 @@ def change_dot():
     dot_win.mainloop()
 
 
-# Функция для удаления точки
+# удаление точки
 def del_dot():
     try:
         place = dots_block.curselection()[0]
@@ -267,7 +268,8 @@ def del_dot():
 
         coords = dots_list.pop(place)
 
-        actions.append(f'read_dot{END, coords[0], coords[1], 0}+actions.pop(-1)+actions.pop(-1)')
+        actions.clear()
+        actions.append(f'read_dot{END, coords[0], coords[1], 0}')
 
         # получение из листбокса координат точки
         num1 = str(dots_block.get(place))[5:-1].split(';')
@@ -297,7 +299,7 @@ def del_dot():
         messagebox.showerror("Ошибка", "Не выбрана точка")
 
 
-# Функция для удаления всех точек текущего множества
+# удаление всех точек текущего множества
 def del_all_dots(canvas_param):
     if canvas_param:
         canvas_win.delete('dot')
@@ -313,6 +315,7 @@ def del_all_dots(canvas_param):
             str_eval += f'read_dot{END, dot[0], dot[1], 0}+'
         if start_param:
             str_eval += 'draw_solution()+'
+        actions.clear()
         actions.append(str_eval)
         start_param = 0
 
@@ -324,7 +327,7 @@ def del_all_dots(canvas_param):
         draw_start_axies()
 
 
-# Функция отрисовки подписей осей
+# отрисовка подписей осей
 def draw_start_axies():
     canvas_win.create_text(795 * win_k, 400.5 * win_k, text="ᐳ", font="AvantGardeC 16", fill='black', tag='start')
     canvas_win.create_text(400.5 * win_k, 9 * win_k, text="ᐱ", font="AvantGardeC 16", fill='black', tag='start')
@@ -332,10 +335,11 @@ def draw_start_axies():
                            text=f"(%3.1f, %3.1f) X" % (100.0, 100.0), font="AvantGardeC 10", fill='black', tag='start')
     canvas_win.create_text(443 * win_k, 18 * win_k,
                            text=f"Y\n(%3.1f, %3.1f)" % (100.0, 100.0), font="AvantGardeC 10", fill='black', tag='start')
-    canvas_win.create_text(424 * win_k, 408 * win_k, text="(0.0; 0.0)", font="AvantGardeC 10", fill='black', tag='start')
+    canvas_win.create_text(424 * win_k, 408 * win_k,
+                           text="(0.0; 0.0)", font="AvantGardeC 10", fill='black', tag='start')
 
 
-# Функция для отрисовки осей координат
+# отрисовка осей координат
 def draw_axies():
     global size
     canvas_win.delete('all')
@@ -345,7 +349,7 @@ def draw_axies():
                            width=1, fill='black', tag='axies')
 
 
-# Определение и запись координат точки по клику
+# определение и запись координат точки по клику
 def click(event):
     if event.x < 0 or event.x > WIN_WIDTH * win_k or event.y < 0 or event.y > WIN_HEIGHT * win_k:
         return
@@ -361,7 +365,7 @@ def solution():
     onside_points = []
     cent = ()
     radi = 0
-    one_line = on_same_line(dots_list)
+    one_line = on_same_line()
 
     if one_line:
         return cent, radi, outside_points, inside_points, onside_points, one_line
@@ -369,13 +373,11 @@ def solution():
     for three in combinations(dots_list, 3):
         inside = []
         outside = []
-        ax, ay = three[0][0], three[0][1]
-        bx, by = three[1][0], three[1][1]
-        cx, cy = three[2][0], three[2][1]
-
-        d = 2 * (ax * (by - cy) + bx * (cy - ay) + cx * (ay - by))
+        ax, ay, bx, by, cx, cy = three[0][0], three[0][1], three[1][0], three[1][1], three[2][0], three[2][1]
 
         # центр окружности
+        d = 2 * (ax * (by - cy) + bx * (cy - ay) + cx * (ay - by))
+
         if d == 0:
             continue
 
@@ -387,6 +389,7 @@ def solution():
         # радиус окружности
         radius = sqrt((ax - x) ** 2 + (ay - y) ** 2)
 
+        # разделение на внутренние и внешние точки
         for point in dots_list:
             flag = 0
             for couple in three:
@@ -411,7 +414,7 @@ def solution():
     return cent, radi, outside_points, inside_points, onside_points, one_line
 
 
-# Прорисовка всех объектов
+# прорисовка всех объектов
 def draw_solution():
     if len(dots_list) < 3:
         messagebox.showerror("Ошибка", "Недостаточно точек для построения")
@@ -444,25 +447,25 @@ def draw_solution():
 
     # Окружность
     circle = draw_circle(center, radius)
-    print(circle)
 
     ovals = canvas_win.find_withtag('oval')
-    actions.append(f'canvas_win.delete{ovals[-1]}')
+    actions.clear()
+    actions.append(f'canvas_win.delete{ovals[-1]}+')
 
     answer_win(center, radius, abs(len(outside_points) - len(inside_points)),
-           len(outside_points), len(inside_points), onside_points)
-
-    actions.append(f'canvas_win.delete({ovals[-1]})+')
+               len(outside_points), len(inside_points), onside_points)
 
 
 # откат
 def undo():
-    if '+' in actions[-1]:
+    if len(actions) == 0:
+        messagebox.showerror("Ошибка", "Разрешен возврат только на одно действие назад.")
+        return
+
+    if '+' in actions[0]:
         for act in actions[-1].split('+'):
-            # print(act)
             eval(act)
-    # print(*actions, sep='\n')
-    # print('\n')
+    actions.clear()
 
 
 # Растягивание окна
@@ -511,7 +514,7 @@ win.title("Лабораторная работа #1")
 canvas_win = Canvas(win, bg="#ffffff")
 
 # Множество точек
-dots_label = Label(text="Координаты точек", bg='pink', font=f"AvantGardeC {14 * win_k}", fg='black')
+dots_label = Label(text="Координаты точек", bg='pink', font="AvantGardeC 14", fg='black')
 
 # Список и блок точек
 dots_list = []
@@ -535,16 +538,16 @@ sol = Button(text="Решить задачу", font="AvantGardeC 14",
 und = Button(text="↩", font="AvantGardeC 14",
              borderwidth=0, command=lambda: undo())
 
-win_x = win_y = 1 # коэффициенты масштабирования окна по осям
-win_k = 1 # коэффициент масштабирования окна (для квадратизации)
-size = SIZE # текущая длина/ширина (они равны) канваса
-border = WIDTH # граница (максимальная видимая координата на канвасе)
-ten_percent = 0 # 10% от величины границы
-m = size * win_k / border # коэффициент масштабирования канваса
-circle = [(0, 0), 0] # центр и радиус окружности-решения
-coord_center = [400, 400] # центр координат (в координатах канваса)
-actions = [] # возврат действия для undo
-start_param = 0 # пока не было увеличения или уменьшения, чтобы при изменении размера окна не ехало
+win_x = win_y = 1  # коэффициенты масштабирования окна по осям
+win_k = 1  # коэффициент масштабирования окна (для квадратизации)
+size = SIZE  # текущая длина/ширина (они равны) канваса
+border = WIDTH  # граница (максимальная видимая координата на канвасе)
+ten_percent = 0  # 10% от величины границы
+m = size * win_k / border  # коэффициент масштабирования канваса
+circle = [(0, 0), 0]  # центр и радиус окружности-решения
+coord_center = [400, 400]  # центр координат (в координатах канваса)
+actions = []  # возврат действия для undo
+start_param = 0  # пока не было увеличения или уменьшения, чтобы при изменении размера окна не ехало
 
 canvas_win.bind('<1>', click)
 
