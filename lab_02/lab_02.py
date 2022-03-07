@@ -46,9 +46,9 @@ class Car:
             next = to_canva(self.points[i + 1][:-1])
             next.append(self.points[i][2])
             if prev[2] == 1:
-                canvas_win.create_line(prev[0], prev[1], next[0], next[1], fill='black')
+                canvas_win.create_line(prev[0], prev[1], next[0], next[1], fill='black', tag='car')
             else:
-                canvas_win.create_line(prev[0], prev[1], start_point[0], start_point[1], fill='black')
+                canvas_win.create_line(prev[0], prev[1], start_point[0], start_point[1], fill='black', tag='car')
                 if next[0] == 0 and next[1] == 0 and next[2] == 0:
                     break
                 start_point = next
@@ -93,12 +93,36 @@ def resize(a, k, center):
 
 def resize_car(k, center):
     global car
-    with open("tmp.txt", 'w') as fout:
-        for i in range(len(car.points) - 1):
-            res = str(resize(car.points[i][:-1], k, center))[1:-1]
-            s1, s2 = str(res).split(',')
-            line = s1 + ' ' + s2 + ' ' + str(car.points[i][2]) + '\n'
-            fout.write(line)
+    for i in range(len(car.points) - 1):
+        res = resize(car.points[i], k, center)
+        car.points[i][0] = res[0]
+        car.points[i][1] = res[1]
+    canvas_win.delete('car')
+    Car.draw_car(car)
+
+def rsz_go(resize_x, resize_y, main_x, main_y):
+    try:
+        rx = float(resize_x.get())
+        ry = float(resize_y.get())
+        mx = - float(main_x.get())
+        my = - float(main_y.get())
+
+        resize_car([rx, ry], [mx, my])
+    except:
+        messagebox.showerror('Ошибка', "Некорректный ввод или пустой ввод")
+
+def start():
+    car.points.clear()
+    canvas_win.delete('car')
+    Car.get_car(car, "car2.txt")
+    Car.draw_car(car)
+    main_x.delete(0, END)
+    main_y.delete(0, END)
+    shift_x.delete(0, END)
+    shift_y.delete(0, END)
+    resize_x.delete(0, END)
+    resize_y.delete(0, END)
+    rotate_angle_y.delete(0, END)
 
 # нахождение коэффициента масштабирования
 def find_scale(dots):
@@ -185,11 +209,11 @@ def draw_axes():
     for i in range(0, s, 50):
         canvas_win.create_line(i, s / 2 - 5, i, s / 2 + 5, fill='pink', width=2)
         canvas_win.create_line(i, 0, i, s, fill='grey', width=1, dash=(1, 9))
-        canvas_win.create_text(i, s // 2 + 20, text=f'{int((i - SIZE // 2) // 2)}' if i - SIZE // 2 else '',
+        canvas_win.create_text(i, s // 2 + 20, text=f'{int((i - SIZE // 2) // 4)}' if i - SIZE // 2 else '',
                                fill='grey', tag='coord', font="AvantGardeC 10")
         canvas_win.create_line(s / 2 - 5, i, s / 2 + 5, i, fill='pink', width=2)
         canvas_win.create_line(0, i, s, i, fill='grey', width=1, dash=(1, 9))
-        canvas_win.create_text(s // 2 - 20, i, text=f'{int((-(i - SIZE // 2)) // 2)}' if i - SIZE // 2 else '',
+        canvas_win.create_text(s // 2 - 20, i, text=f'{int((-(i - SIZE // 2)) // 4)}' if i - SIZE // 2 else '',
                                fill='grey', tag='coord', font="AvantGardeC 10")
 
     canvas_win.create_text(s - 20, s // 2 + 20, text='X', font="AvantGardeC 14", fill='grey')
@@ -245,12 +269,13 @@ def config(event):
 
         rtt.place(x=33 * win_x, y=560 * win_y, width=235 * win_x, height=32 * win_y)
 
-
-        # con.place(x=30 * win_x, y=640 * win_y, width=235 * win_x, height=41 * win_y)
-        # sol.place(x=30 * win_x, y=685 * win_y, width=235 * win_x, height=41 * win_y)
-
+        # условие
+        con.place(x=30 * win_x, y=640 * win_y, width=235 * win_x, height=28 * win_y)
         # откат
-        und.place(x=30 * win_x, y=685 * win_y, width=235 * win_x, height=24 * win_y)
+        und.place(x=30 * win_x, y=670 * win_y, width=235 * win_x, height=28 * win_y)
+        # к начальным условиям
+        bgn.place(x=30 * win_x, y=700 * win_y, width=235 * win_x, height=28 * win_y)
+
 
         coord_center = [size / 2, size / 2]
 
@@ -298,21 +323,24 @@ rotate_angle_y = Entry(font="AvantGardeC 14", bg='white', fg='black', borderwidt
 dots_list = []
 dots_list_copy = []
 
+
 # Кнопки
 sft = Button(text="Переместить", font="AvantGardeC 14",
-             borderwidth=0, command=lambda: shift())
+             borderwidth=0, command=lambda: change_dot())
 rsz = Button(text="Масштабировать", font="AvantGardeC 14",
-             borderwidth=0, command=lambda: del_dot())
+             borderwidth=0, command=lambda: rsz_go(resize_x, resize_y, main_x, main_y))
 chg = Button(text="Изменить", font="AvantGardeC 14",
              borderwidth=0, command=lambda: change_dot())
 rtt = Button(text="Очистить", font="AvantGardeC 14",
                  borderwidth=0, command=lambda: del_all_dots(0))
-# con = Button(text="Условие задачи", font="AvantGardeC 14",
-#              borderwidth=0, command=lambda: messagebox.showinfo("Задание", TASK))
+con = Button(text="Условие задачи", font="AvantGardeC 14",
+             borderwidth=0, command=lambda: messagebox.showinfo("Задание", TASK))
 pnt = Button(text="?", font="AvantGardeC 14",
              borderwidth=0, command=lambda: messagebox.showinfo("Задание",
                                                                 "Ключевая точка - точка, относительно которой "
                                                                 "будет производиться поворот, масштабирование."))
+bgn = Button(text="Сброс", font="AvantGardeC 14",
+             borderwidth=0, command=lambda: start())
 und = Button(text="↩", font="AvantGardeC 14",
              borderwidth=0, command=lambda: undo())
 
@@ -330,6 +358,7 @@ car = Car()
 Car.get_car(car, "car2.txt")
 # resizecar(2, [0, 0])
 # Car.get_car(car, "tmp.txt")
+# resize_car([1, 4], [0, 0])
 
 
 
