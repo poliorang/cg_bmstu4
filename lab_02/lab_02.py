@@ -48,15 +48,16 @@ class Car:
         for i in range(len(self.points) - 1):
             prev = to_canva(self.points[i][:-1])
             prev.append(self.points[i][2])
-            next = to_canva(self.points[i + 1][:-1])
-            next.append(self.points[i][2])
+
+            next_ = to_canva(self.points[i + 1][:-1])
+            next_.append(self.points[i][2])
             if prev[2] == 1:
-                canvas_win.create_line(prev[0], prev[1], next[0], next[1], fill='black', tag='car')
+                canvas_win.create_line(prev[0], prev[1], next_[0], next_[1], fill='black', tag='car')
             else:
                 canvas_win.create_line(prev[0], prev[1], start_point[0], start_point[1], fill='black', tag='car')
-                if next[0] == -0.0 and next[1] == -0.0 and next[2] == 0.0:
+                if next_[0] == -0.0 and next_[1] == -0.0 and next_[2] == 0.0:
                     break
-                start_point = next
+                start_point = next_
 
 
 def coord_sum(a, b):
@@ -79,6 +80,7 @@ def shift_car(shft):
     canvas_win.delete('car')
     Car.draw_car(car)
 
+
 # связывает кнопку смещения и функцию
 def sft_go():
     try:
@@ -88,6 +90,7 @@ def sft_go():
         shift_car([shx, shy])
     except ValueError:
         messagebox.showerror('Ошибка', "Некорректный ввод или пустой ввод")
+
 
 # поворот точки
 def rotate(a, alpha, center):
@@ -140,7 +143,6 @@ def save_state():
     car_history.append(tmp)
     xy_history.append(copy.deepcopy(xy_current))
     main_history.append(main_point)
-    # print(tmp.points)
 
 
 # изменение размера для точки
@@ -183,20 +185,17 @@ def rsz_go():
         messagebox.showerror('Ошибка', "Некорректные координаты ключевой точки")
 
 
-def check_abroad():
-    global edge, k_board, main_point, m_board
-    for point in car.points:
-        if point[0] < -edge or point[1] < -edge or point[0] > edge or point[1] > edge:
-            if len(main_point) == 0:
-                main_point = [0, 0]
-            # print('main ', main_point)
-            resize_car([0.5, 0.5], [0.0, 0.0])
-            k_board //= 2
-            m_board *= 2
-            canvas_win.delete('coord')
-            draw_axes()
+# def check_abroad():
+#     global edge, k_board, main_point, m_board
+#     for point in car.points:
+#         if point[0] < -edge or point[1] < -edge or point[0] > edge or point[1] > edge:
+#             if len(main_point) == 0:
+#                 main_point = [0, 0, 0, 0]
+#             # print('main ', main_point)
+#             change_size(PLUS)
 
 
+# прорисовка ключевой точки
 def draw_main_point(ev_x, ev_y, param):
     if len(main_point):
         canvas_win.delete('dot')
@@ -214,6 +213,7 @@ def draw_main_point(ev_x, ev_y, param):
                                outline='grey', fill='pink', activeoutline='lightgreen', width=2, tag='dot')
 
 
+# начальные условия (после сброса)
 def start():
     global k_board, m_board, car_history, xy_history, xy_current
     save_state()
@@ -241,6 +241,7 @@ def start():
 
 
 # координаты точки из канвасовских в фактические
+# (только при клике используется, если будет иначе, надо убрать * m_board)
 def to_coords(dot):
     x = (dot[0] - coord_center[0]) / m * m_board
     y = (- dot[1] + coord_center[1]) / m * m_board
@@ -254,7 +255,6 @@ def to_canva(dot):
     x = coord_center[0] + dot[0] * m
     y = coord_center[1] - dot[1] * m
 
-    # print(x, y)
     return [x, y]
 
 
@@ -273,9 +273,6 @@ def click(event):
 def undo():
     if len(car_history) == 0:
         messagebox.showerror("Внимание", "Достигнуто исходное состояние")
-        # car_history.clear()
-        # xy_history.clear()
-        # main_history.clear()
         return
 
     global xy_current, main_point
@@ -389,6 +386,7 @@ def config(event):
         Car.draw_car(car)
 
 
+# масштабирование канваса
 def change_size(plus_or_minus):
     global k_board, m_board, xy_current, main_point
     save_state()
@@ -408,6 +406,8 @@ def change_size(plus_or_minus):
     draw_main_point(0, 0, MINUS)
     draw_axes()
     Car.draw_car(car)
+
+
 
 # Окно tkinter
 win = Tk()
@@ -446,15 +446,14 @@ rotate_angle = Entry(font="AvantGardeC 14", bg='white', fg='black', borderwidth=
 resize_canv_lbl = Label(text="Масштабирование канваса", bg='lightgrey', font="AvantGardeC 14", fg='black')
 
 # Список точек
-main_point = []
-car_history = []
-xy_history = []
+main_point = [] # ключевая точка
+main_history = [] # история координат ключевой точки
+car_history = [] # история координат машинки
+xy_history = [] # история координат на оси
 xy_start = [-100.00, -87.50, -75.00, -62.50, -50.00, -37.50, -25.00, -12.50,
             0.00, 12.50, 25.00, 37.50, 50.00, 62.50, 75.00, 87.50, 100.00]
 xy_current = [-100.00, -87.50, -75.00, -62.50, -50.00, -37.50, -25.00, -12.50,
             0.00, 12.50, 25.00, 37.50, 50.00, 62.50, 75.00, 87.50, 100.00]
-main_history = []
-
 
 # Кнопки
 sft = Button(text="Переместить", font="AvantGardeC 14",
@@ -483,10 +482,10 @@ border = WIDTH  # граница (максимальная видимая коо
 ten_percent = 0  # 10% от величины границы
 m = size * win_k / border  # коэффициент масштабирования канваса
 coord_center = [400, 400]  # центр координат (в координатах канваса)
-actions = []  # возврат действия для undo
+
 edge = 100 # максимальная видимая координата на канвасе, но в координатах сетки
 k_board = 4
-m_board = 1
+m_board = 1 # коэффициент масштабирования при изменении масштаба канваса
 
 car = Car()
 Car.get_car(car, "car2.txt")
