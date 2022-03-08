@@ -228,7 +228,7 @@ def start():
     xy_current = xy_start.copy()
     draw_axes()
 
-    Car.get_car(car, "car2.txt")
+    Car.get_car(car, "car.txt")
     Car.draw_car(car)
 
     main_x.delete(0, END)
@@ -488,7 +488,7 @@ k_board = 4
 m_board = 1 # коэффициент масштабирования при изменении масштаба канваса
 
 car = Car()
-Car.get_car(car, "car2.txt")
+Car.get_car(car, "car.txt")
 
 canvas_win.bind('<1>', click)
 # win.bind('<Right>', lambda event: shift_car((1 * win_k, 0)))
