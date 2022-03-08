@@ -80,7 +80,7 @@ def shift_car(shft):
     Car.draw_car(car)
 
 # связывает кнопку смещения и функцию
-def sft_go(shift_x, shift_y):
+def sft_go():
     try:
         shx = float(shift_x.get())
         shy = float(shift_y.get())
@@ -112,7 +112,7 @@ def rotate_car(alpha, center):
 
 
 # связывает кнопку поворота и функцию
-def rtt_go(rotate_angle, main_x, main_y):
+def rtt_go():
     try:
         angle = float(rotate_angle.get())
     except ValueError:
@@ -163,7 +163,7 @@ def resize_car(k, center):
 
 
 # связывание кнопку масшт и функцию
-def rsz_go(resize_x, resize_y, main_x, main_y):
+def rsz_go():
     try:
         rx = float(resize_x.get())
         ry = float(resize_y.get())
@@ -196,9 +196,6 @@ def check_abroad():
             canvas_win.delete('coord')
             draw_axes()
 
-
-# def check_zero():
-#     if m_board != 1 and
 
 def draw_main_point(ev_x, ev_y, param):
     if len(main_point):
@@ -248,7 +245,6 @@ def to_coords(dot):
     x = (dot[0] - coord_center[0]) / m * m_board
     y = (- dot[1] + coord_center[1]) / m * m_board
 
-    # print(x, y)
     return [x, y]
 
 
@@ -277,6 +273,9 @@ def click(event):
 def undo():
     if len(car_history) == 0:
         messagebox.showerror("Внимание", "Достигнуто исходное состояние")
+        # car_history.clear()
+        # xy_history.clear()
+        # main_history.clear()
         return
 
     global xy_current, main_point
@@ -312,7 +311,7 @@ def draw_axes():
 
         canvas_win.create_line(s / 2 - 5, i, s / 2 + 5, i, fill='pink', width=2)
         canvas_win.create_line(0, i, s, i, fill='grey', width=1, dash=(1, 9))
-        canvas_win.create_text(s // 2 - 20, i, text=f'{"%.2f" % xy_current[j]}' if i - SIZE // 2 else '',
+        canvas_win.create_text(s // 2 - 20, i, text=f'{"%.2f" % xy_current[16 - j]}' if i - SIZE // 2 else '',
                                fill='grey', tag='coord', font="AvantGardeC 10")
 
         j += 1
@@ -337,38 +336,37 @@ def config(event):
 
         # ключевая точка
         center_lbl.place(x=33 * win_x, y=18 * win_y, width=215 * win_x, height=24 * win_y)
-        main_x_lbl.place(x=33 * win_x, y=52 * win_y, width=110 * win_x, height=20 * win_y)
-        main_y_lbl.place(x=158 * win_x, y=52 * win_y, width=110 * win_x, height=20 * win_y)
-        main_x.place(x=33 * win_x, y=80 * win_y, width=110 * win_x, height=24 * win_y)
-        main_y.place(x=158 * win_x, y=80 * win_y, width=110 * win_x, height=24 * win_y)
+        main_x_lbl.place(x=33 * win_x, y=48 * win_y, width=110 * win_x, height=20 * win_y)
+        main_y_lbl.place(x=158 * win_x, y=48 * win_y, width=110 * win_x, height=20 * win_y)
+        main_x.place(x=33 * win_x, y=76 * win_y, width=110 * win_x, height=24 * win_y)
+        main_y.place(x=158 * win_x, y=76 * win_y, width=110 * win_x, height=24 * win_y)
 
         pnt.place(x=252 * win_x, y=18 * win_y, width=16 * win_x, height=24 * win_y)
 
-        # сдвиг
-        shift_lbl.place(x=33 * win_x, y=140 * win_y, width=235 * win_x, height=24 * win_y)
+        # поворот
+        rotate_lbl.place(x=33 * win_x, y=125 * win_y, width=235 * win_x, height=24 * win_y)
+        rotate_angle_lbl.place(x=33 * win_x, y=155 * win_y, width=235 * win_x, height=22 * win_y)
+        rotate_angle.place(x=33 * win_x, y=181 * win_y, width=235 * win_x, height=24 * win_y)
 
-        shift_x_lbl.place(x=33 * win_x, y=174 * win_y, width=110 * win_x, height=20 * win_y)
-        shift_y_lbl.place(x=158 * win_x, y=174 * win_y, width=110 * win_x, height=20 * win_y)
-        shift_x.place(x=33 * win_x, y=202 * win_y, width=110 * win_x, height=24 * win_y)
-        shift_y.place(x=158 * win_x, y=202 * win_y, width=110 * win_x, height=24 * win_y)
-
-        sft.place(x=33 * win_x, y=233 * win_y, width=235 * win_x, height=32 * win_y)
+        rtt.place(x=33 * win_x, y=211 * win_y, width=235 * win_x, height=32 * win_y)
 
         # масштабирование
-        resize_lbl.place(x=33 * win_x, y=301 * win_y, width=235 * win_x, height=24 * win_y)
-        resize_x_lbl.place(x=33 * win_x, y=335 * win_y, width=110 * win_x, height=20 * win_y)
-        resize_y_lbl.place(x=158 * win_x, y=335 * win_y, width=110 * win_x, height=20 * win_y)
-        resize_x.place(x=33 * win_x, y=363 * win_y, width=110 * win_x, height=24 * win_y)
-        resize_y.place(x=158 * win_x, y=363 * win_y, width=110 * win_x, height=24 * win_y)
+        resize_lbl.place(x=33 * win_x, y=270 * win_y, width=235 * win_x, height=24 * win_y)
+        resize_x_lbl.place(x=33 * win_x, y=300 * win_y, width=110 * win_x, height=22 * win_y)
+        resize_y_lbl.place(x=158 * win_x, y=300 * win_y, width=110 * win_x, height=22 * win_y)
+        resize_x.place(x=33 * win_x, y=324 * win_y, width=110 * win_x, height=24 * win_y)
+        resize_y.place(x=158 * win_x, y=324 * win_y, width=110 * win_x, height=24 * win_y)
 
-        rsz.place(x=33 * win_x, y=394 * win_y, width=235 * win_x, height=32 * win_y)
+        rsz.place(x=33 * win_x, y=354 * win_y, width=235 * win_x, height=32 * win_y)
 
-        # поворот
-        rotate_lbl.place(x=33 * win_x, y=464 * win_y, width=235 * win_x, height=24 * win_y)
-        rotate_angle_lbl.place(x=33 * win_x, y=498 * win_y, width=235 * win_x, height=22 * win_y)
-        rotate_angle.place(x=33 * win_x, y=528 * win_y, width=235 * win_x, height=24 * win_y)
+        # перемещение
+        shift_lbl.place(x=33 * win_x, y=410 * win_y, width=235 * win_x, height=24 * win_y)
+        shift_x_lbl.place(x=33 * win_x, y=440 * win_y, width=110 * win_x, height=20 * win_y)
+        shift_y_lbl.place(x=158 * win_x, y=440 * win_y, width=110 * win_x, height=20 * win_y)
+        shift_x.place(x=33 * win_x, y=464 * win_y, width=110 * win_x, height=24 * win_y)
+        shift_y.place(x=158 * win_x, y=464 * win_y, width=110 * win_x, height=24 * win_y)
 
-        rtt.place(x=33 * win_x, y=560 * win_y, width=235 * win_x, height=32 * win_y)
+        sft.place(x=33 * win_x, y=494 * win_y, width=235 * win_x, height=32 * win_y)
 
         # условие
         con.place(x=30 * win_x, y=640 * win_y, width=235 * win_x, height=28 * win_y)
@@ -379,8 +377,9 @@ def config(event):
 
 
         # изменение размера
-        pls.place(x=30 * win_x, y=600 * win_y, width=110 * win_x, height=24 * win_y)
-        mns.place(x=158 * win_x, y=600 * win_y, width=110 * win_x, height=24 * win_y)
+        resize_canv_lbl.place(x=30 * win_x, y=570 * win_y, width=235 * win_x, height=24 * win_y)
+        pls.place(x=30 * win_x, y=600 * win_y, width=109 * win_x, height=26 * win_y)
+        mns.place(x=157 * win_x, y=600 * win_y, width=109 * win_x, height=26 * win_y)
 
         coord_center = [size / 2, size / 2]
 
@@ -444,6 +443,8 @@ resize_y = Entry(font="AvantGardeC 14", bg='white', fg='black', borderwidth=0, i
 rotate_angle_lbl = Label(text="Угол в градусах", bg='lightgrey', font="AvantGardeC 14", fg='black')
 rotate_angle = Entry(font="AvantGardeC 14", bg='white', fg='black', borderwidth=0, insertbackground='black', justify='center')
 
+resize_canv_lbl = Label(text="Масштабирование канваса", bg='lightgrey', font="AvantGardeC 14", fg='black')
+
 # Список точек
 main_point = []
 car_history = []
@@ -457,13 +458,13 @@ main_history = []
 
 # Кнопки
 sft = Button(text="Переместить", font="AvantGardeC 14",
-             borderwidth=0, command=lambda: sft_go(shift_x, shift_y))
+             borderwidth=0, command=lambda: sft_go())
 rsz = Button(text="Масштабировать", font="AvantGardeC 14",
-             borderwidth=0, command=lambda: rsz_go(resize_x, resize_y, main_x, main_y))
+             borderwidth=0, command=lambda: rsz_go())
 rtt = Button(text="Повернуть", font="AvantGardeC 14",
-             borderwidth=0, command=lambda: rtt_go(rotate_angle, main_x, main_y))
+             borderwidth=0, command=lambda: rtt_go())
 con = Button(text="Условие задачи", font="AvantGardeC 14",
-             borderwidth=0, command=lambda: messagebox.showinfo("Задание", TASK))
+             borderwidth=0, command=lambda: messagebox.showinfo("Задание", TASK + AUTHOR))
 pnt = Button(text="?", font="AvantGardeC 14",
              borderwidth=0, command=lambda: messagebox.showinfo("Точка", MAIN_POINT))
 bgn = Button(text="Сброс", font="AvantGardeC 14",
@@ -491,12 +492,12 @@ car = Car()
 Car.get_car(car, "car2.txt")
 
 canvas_win.bind('<1>', click)
-win.bind('<Right>', lambda event: shift_car((1 * win_k, 0)))
-win.bind('<Left>', lambda event: shift_car((-1 * win_k, 0)))
-win.bind('<Up>', lambda event: shift_car((0, 1 * win_k)))
-win.bind('<Down>', lambda event: shift_car((0, -1 * win_k)))
-win.bind('<Command-Left>', lambda event: rotate_car(2, (0, 0)))
-win.bind('<Command-Right>', lambda event: rotate_car(-2, (0, 0)))
+# win.bind('<Right>', lambda event: shift_car((1 * win_k, 0)))
+# win.bind('<Left>', lambda event: shift_car((-1 * win_k, 0)))
+# win.bind('<Up>', lambda event: shift_car((0, 1 * win_k)))
+# win.bind('<Down>', lambda event: shift_car((0, -1 * win_k)))
+# win.bind('<Command-Left>', lambda event: rotate_car(2, (0, 0)))
+# win.bind('<Command-Right>', lambda event: rotate_car(-2, (0, 0)))
 
 # Меню
 menu = Menu(win)
