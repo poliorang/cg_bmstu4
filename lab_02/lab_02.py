@@ -9,8 +9,8 @@ WIN_HEIGHT = 800
 SIZE = 800
 WIDTH = 100.0
 
-HAND = 1
-CANVA = 0
+PLUS = 1
+MINUS = 0
 
 TASK = "Геометрические преобразования.\n\n" \
        "Нарисовать исходный рисунок. " \
@@ -75,7 +75,7 @@ def shift_car(shft):
         res = coord_sum(car.points[i], shft)
         car.points[i][0] = res[0]
         car.points[i][1] = res[1]
-    check_abroad()
+    # check_abroad()
     canvas_win.delete('car')
     Car.draw_car(car)
 
@@ -124,7 +124,7 @@ def rtt_go(rotate_angle, main_x, main_y):
 
         global main_point
         main_point = [mx, my]
-        draw_main_point()
+        draw_main_point(0, 0, MINUS)
         save_state()
         rotate_car(angle, main_point)
     except ValueError:
@@ -133,11 +133,13 @@ def rtt_go(rotate_angle, main_x, main_y):
 
 # сохранить в историю положение рисунка
 def save_state():
-    global car_history
+    global car_history, xy_history, car
     tmp = Car()
     for point in car.points:
         tmp.points.append(copy.deepcopy(point))
     car_history.append(tmp)
+    xy_history.append(copy.deepcopy(xy_current))
+    # print(tmp.points)
 
 
 # изменение размера для точки
@@ -173,7 +175,7 @@ def rsz_go(resize_x, resize_y, main_x, main_y):
 
         global main_point
         main_point = [mx, my]
-        draw_main_point()
+        draw_main_point(0, 0, MINUS)
         save_state()
         resize_car([rx, ry], main_point)
     except ValueError:
@@ -197,7 +199,7 @@ def check_abroad():
 # def check_zero():
 #     if m_board != 1 and
 
-def draw_main_point():
+def draw_main_point(ev_x, ev_y, param):
     if len(main_point):
         canvas_win.delete('dot')
 
@@ -206,22 +208,31 @@ def draw_main_point():
         main_x.insert(0, "%.1f" % main_point[0])
         main_y.insert(0, "%.1f" % main_point[1])
 
-        x, y = to_canva(main_point)
+        if param:
+            x, y = ev_x, ev_y
+        else:
+            x, y = to_canva(main_point)
         canvas_win.create_oval(x - 2, y - 2, x + 2, y + 2,
                                outline='grey', fill='pink', activeoutline='lightgreen', width=2, tag='dot')
 
 
 def start():
-    global k_board, m_board, car_history
+    global k_board, m_board, car_history, xy_history, xy_current
     save_state()
 
     car.points.clear()
     main_point.clear()
+
     k_board = 4
     m_board = 1
-    canvas_win.delete('car', 'dot')
+    canvas_win.delete('all')
+
+    xy_current = xy_start.copy()
+    draw_axes()
+
     Car.get_car(car, "car2.txt")
     Car.draw_car(car)
+
     main_x.delete(0, END)
     main_y.delete(0, END)
     shift_x.delete(0, END)
@@ -233,9 +244,10 @@ def start():
 
 # координаты точки из канвасовских в фактические
 def to_coords(dot):
-    x = (dot[0] - coord_center[0]) / m
-    y = (- dot[1] + coord_center[1]) / m
+    x = (dot[0] - coord_center[0]) / m * m_board
+    y = (- dot[1] + coord_center[1]) / m * m_board
 
+    # print(x, y)
     return [x, y]
 
 
@@ -245,6 +257,7 @@ def to_canva(dot):
     x = coord_center[0] + dot[0] * m
     y = coord_center[1] - dot[1] * m
 
+    print(x, y)
     return [x, y]
 
 
@@ -256,7 +269,7 @@ def click(event):
     global main_point
     main_point = to_coords([event.x, event.y])
 
-    draw_main_point()
+    draw_main_point(event.x, event.y, PLUS)
 
 
 # откат
@@ -265,9 +278,13 @@ def undo():
         messagebox.showerror("Внимание", "Достигнуто исходное состояние")
         return
 
-    canvas_win.delete('car')
-    Car.draw_car(car_history[len(car_history) - 1])
+    global xy_current
+    xy_current = xy_history[-1]
+    canvas_win.delete('car', 'coord')
+    Car.draw_car(car_history[-1])
+    draw_axes()
     car_history.pop()
+    xy_history.pop()
 
 
 # оси координат и сетка
@@ -278,16 +295,21 @@ def draw_axes():
                   width=1, arrow=LAST, activefill='lightgreen', arrowshape="10 20 6")
 
     s = int(size)
-    print(s)
+    j = 0
     for i in range(0, s, s // 16):
         canvas_win.create_line(i, s / 2 - 5, i, s / 2 + 5, fill='pink', width=2)
         canvas_win.create_line(i, 0, i, s, fill='grey', width=1, dash=(1, 9))
-        canvas_win.create_text(i, s // 2 + 20, text=f'{"%.1f" % float((i - SIZE // 2) // k_board)}' if i - SIZE // 2 else '',
+        # canvas_win.create_text(i, s // 2 + 20, text=f'{"%.2f" % float((i - SIZE // 2) // k_board)}' if i - SIZE // 2 else '',
+        #                        fill='grey', tag='coord', font="AvantGardeC 10")
+        canvas_win.create_text(i, s // 2 + 20, text=f'{"%.2f" % xy_current[j]}' if i - SIZE // 2 else '',
                                fill='grey', tag='coord', font="AvantGardeC 10")
+
         canvas_win.create_line(s / 2 - 5, i, s / 2 + 5, i, fill='pink', width=2)
         canvas_win.create_line(0, i, s, i, fill='grey', width=1, dash=(1, 9))
-        canvas_win.create_text(s // 2 - 20, i, text=f'{"%.1f" % float((-(i - SIZE // 2)) // k_board)}' if i - SIZE // 2 else '',
+        canvas_win.create_text(s // 2 - 20, i, text=f'{"%.2f" % xy_current[j]}' if i - SIZE // 2 else '',
                                fill='grey', tag='coord', font="AvantGardeC 10")
+
+        j += 1
 
     canvas_win.create_text(s - 20, s // 2 + 20, text='X', font="AvantGardeC 14", fill='grey')
     canvas_win.create_text(s // 2 + 20, 20, text='Y', font="AvantGardeC 14", fill='grey')
@@ -350,16 +372,41 @@ def config(event):
         bgn.place(x=30 * win_x, y=700 * win_y, width=235 * win_x, height=28 * win_y)
 
 
+        # изменение размера
+        pls.place(x=30 * win_x, y=600 * win_y, width=110 * win_x, height=24 * win_y)
+        mns.place(x=158 * win_x, y=600 * win_y, width=110 * win_x, height=24 * win_y)
+
         coord_center = [size / 2, size / 2]
 
-        # main_point = [main_point[0] * win_k, main_point[1] * win_k]
         canvas_win.delete('all')
         draw_axes()
-        draw_main_point()
-        # rotate_car(180, [0, 0])
+        draw_main_point(0, 0, MINUS)
         Car.draw_car(car)
 
 
+def change_size(plus_or_minus):
+    global k_board, m_board, xy_current, main_point
+    save_state()
+    canvas_win.delete('coord', 'car', 'dot')
+
+    if plus_or_minus == 0:
+        # k_board //= 2
+        m_board *= 2
+        xy_current = [xy_current[i] * 2 for i in range(len(xy_current))]
+        resize_car([0.5, 0.5], [0.0, 0.0])
+        if len(main_point) != 0:
+            main_point = [main_point[0] / 2, main_point[1] / 2]
+    else:
+        # k_board *= 2
+        m_board /= 2
+        xy_current = [xy_current[i] / 2 for i in range(len(xy_current))]
+        resize_car([2, 2], [0.0, 0.0])
+        if len(main_point) != 0:
+            main_point = [main_point[0] * 2, main_point[1] * 2]
+
+    draw_main_point(0, 0, MINUS)
+    draw_axes()
+    Car.draw_car(car)
 
 # Окно tkinter
 win = Tk()
@@ -398,6 +445,12 @@ rotate_angle = Entry(font="AvantGardeC 14", bg='white', fg='black', borderwidth=
 # Список точек
 main_point = []
 car_history = []
+xy_history = []
+xy_start = [-100.00, -87.50, -75.00, -62.50, -50.00, -37.50, -25.00, -12.50,
+            0.00, 12.50, 25.00, 37.50, 50.00, 62.50, 75.00, 87.50, 100.00]
+xy_current = [-100.00, -87.50, -75.00, -62.50, -50.00, -37.50, -25.00, -12.50,
+            0.00, 12.50, 25.00, 37.50, 50.00, 62.50, 75.00, 87.50, 100.00]
+
 
 # Кнопки
 sft = Button(text="Переместить", font="AvantGardeC 14",
@@ -414,6 +467,10 @@ bgn = Button(text="Сброс", font="AvantGardeC 14",
              borderwidth=0, command=lambda: start())
 und = Button(text="↩", font="AvantGardeC 14",
              borderwidth=0, command=lambda: undo())
+pls = Button(text="+", font="AvantGardeC 14",
+             borderwidth=0, command=lambda: change_size(PLUS))
+mns = Button(text="-", font="AvantGardeC 14",
+             borderwidth=0, command=lambda: change_size(MINUS))
 
 win_x = win_y = 1  # коэффициенты масштабирования окна по осям
 win_k = 1  # коэффициент масштабирования окна (для квадратизации)
