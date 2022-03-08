@@ -139,6 +139,7 @@ def save_state():
         tmp.points.append(copy.deepcopy(point))
     car_history.append(tmp)
     xy_history.append(copy.deepcopy(xy_current))
+    main_history.append(main_point)
     # print(tmp.points)
 
 
@@ -257,7 +258,7 @@ def to_canva(dot):
     x = coord_center[0] + dot[0] * m
     y = coord_center[1] - dot[1] * m
 
-    print(x, y)
+    # print(x, y)
     return [x, y]
 
 
@@ -278,13 +279,18 @@ def undo():
         messagebox.showerror("Внимание", "Достигнуто исходное состояние")
         return
 
-    global xy_current
+    global xy_current, main_point
     xy_current = xy_history[-1]
-    canvas_win.delete('car', 'coord')
+    canvas_win.delete('car', 'coord', 'dot')
     Car.draw_car(car_history[-1])
+
+    main_point = main_history[-1]
+    draw_main_point(0, 0, MINUS)
     draw_axes()
+
     car_history.pop()
     xy_history.pop()
+    main_history.pop()
 
 
 # оси координат и сетка
@@ -446,6 +452,7 @@ xy_start = [-100.00, -87.50, -75.00, -62.50, -50.00, -37.50, -25.00, -12.50,
             0.00, 12.50, 25.00, 37.50, 50.00, 62.50, 75.00, 87.50, 100.00]
 xy_current = [-100.00, -87.50, -75.00, -62.50, -50.00, -37.50, -25.00, -12.50,
             0.00, 12.50, 25.00, 37.50, 50.00, 62.50, 75.00, 87.50, 100.00]
+main_history = []
 
 
 # Кнопки
