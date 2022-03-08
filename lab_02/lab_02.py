@@ -126,7 +126,7 @@ def rtt_go(rotate_angle, main_x, main_y):
         main_point = [mx, my]
         draw_main_point(0, 0, MINUS)
         save_state()
-        rotate_car(angle, main_point)
+        rotate_car(angle, [main_point[0] / m_board, main_point[1] / m_board])
     except ValueError:
         messagebox.showerror('Ошибка', "Некорректные координаты ключевой точки")
 
@@ -177,7 +177,7 @@ def rsz_go(resize_x, resize_y, main_x, main_y):
         main_point = [mx, my]
         draw_main_point(0, 0, MINUS)
         save_state()
-        resize_car([rx, ry], main_point)
+        resize_car([rx, ry], [main_point[0] / m_board, main_point[1] / m_board])
     except ValueError:
         messagebox.showerror('Ошибка', "Некорректные координаты ключевой точки")
 
@@ -211,7 +211,7 @@ def draw_main_point(ev_x, ev_y, param):
         if param:
             x, y = ev_x, ev_y
         else:
-            x, y = to_canva(main_point)
+            x, y = to_canva([main_point[0] / m_board, main_point[1] / m_board])
         canvas_win.create_oval(x - 2, y - 2, x + 2, y + 2,
                                outline='grey', fill='pink', activeoutline='lightgreen', width=2, tag='dot')
 
@@ -394,15 +394,11 @@ def change_size(plus_or_minus):
         m_board *= 2
         xy_current = [xy_current[i] * 2 for i in range(len(xy_current))]
         resize_car([0.5, 0.5], [0.0, 0.0])
-        if len(main_point) != 0:
-            main_point = [main_point[0] / 2, main_point[1] / 2]
     else:
         # k_board *= 2
         m_board /= 2
         xy_current = [xy_current[i] / 2 for i in range(len(xy_current))]
         resize_car([2, 2], [0.0, 0.0])
-        if len(main_point) != 0:
-            main_point = [main_point[0] * 2, main_point[1] * 2]
 
     draw_main_point(0, 0, MINUS)
     draw_axes()
