@@ -1,9 +1,8 @@
 import copy
-from tkinter import messagebox, ttk
+from tkinter import messagebox, ttk, colorchooser
 from tkinter import *
-from math import radians, cos, sin
+from math import radians, cos, sin, fabs, floor, pi
 import colorutils as cu
-from math import fabs, floor
 
 WIN_WIDTH = 1200
 WIN_HEIGHT = 800
@@ -36,8 +35,7 @@ def sft_go():
         messagebox.showerror('Ошибка', "Не введены или некорректны значения смещения")
 
 
-def choose_color(color, intens):
-    return color + (intens, intens, intens)
+
 
 
 # сохранить в историю положение рисунка
@@ -67,8 +65,8 @@ def save_state():
 # координаты точки из канвасовских в фактические
 # (только при клике используется, если будет иначе, надо убрать * m_board)
 def to_coords(dot):
-    x = (dot[0] - coord_center[0]) / m * m_board
-    y = (- dot[1] + coord_center[1]) / m * m_board
+    x = (dot[0] - coord_center[0]) * m_board
+    y = (- dot[1] + coord_center[1]) * m_board
 
     return [x, y]
 
@@ -91,7 +89,7 @@ def sign(diff):
         return 1
 
 
-def parse_line(option, option_color):
+def parse_line(option):
     try:
         x1 = int(x1_entry.get())
         y1 = int(y1_entry.get())
@@ -105,35 +103,15 @@ def parse_line(option, option_color):
     p1 = [x1, y1]
     p2 = [x2, y2]
 
-    parse_methods(p1, p2, option, option_color)
+    parse_methods(p1, p2, option)
 
 
-def parse_color(option_color):
-
-    print("Color = ", option_color)
-
-    color = "black" # None
-
-    if option_color == 0:
-        color = cu.Color((255, 0, 0)) # "red"
-    elif option_color == 1:
-        color = cu.Color((0, 0, 0)) # "black"
-    elif option_color == 2:
-        color = cu.Color((0, 0, 255)) # "blue"
-    elif option_color == 3:
-        color = cu.Color((255, 255, 255)) # СV_COLOR
-
-    return color
-
-
-def parse_methods(p1, p2, option, option_color, draw=True):
-    print("Method = ", option)
-
-    color = parse_color(option_color)
+def parse_methods(p1, p2, option, draw=True):
+    # print("Method = ", option)
+    color = cu.Color(current_color[0])
 
     if option == 0:
         dots = bresenham_int(p1, p2, color)
-        print(dots)
 
         if draw:
             draw_line(dots)
@@ -143,7 +121,6 @@ def parse_methods(p1, p2, option, option_color, draw=True):
 
         if draw:
             draw_line(dots)
-
 
     elif option == 2:
             dots = bresenham_smooth(p1, p2, color)
@@ -297,11 +274,13 @@ def bresenham_float(p1, p2, color, step_count=False):
         return dots
 
 
+def choose_color(color, intens):
+    return color + (intens, intens, intens)
+
+
 def bresenham_smooth(p1, p2, color, step_count=False):
-    x1 = p1[0]
-    y1 = p1[1]
-    x2 = p2[0]
-    y2 = p2[1]
+    x1, y1 = p1[0], p1[1]
+    x2, y2 = p2[0], p2[1]
 
     if (x2 - x1 == 0) and (y2 - y1 == 0):
         return [[x1, y1, color]]
@@ -315,13 +294,12 @@ def bresenham_smooth(p1, p2, color, step_count=False):
     s1 = sign(x2 - x1)
     s2 = sign(y2 - y1)
 
-    if (dy > dx):
+    swaped = 0
+    if dy > dx:
         tmp = dx
         dx = dy
         dy = tmp
         swaped = 1
-    else:
-        swaped = 0
 
     intens = 255
 
@@ -337,12 +315,12 @@ def bresenham_smooth(p1, p2, color, step_count=False):
 
     steps = 0
 
-    while (i <= dx):
+    while i <= dx:
         x_buf = x
         y_buf = y
 
-        if (e < w):
-            if (swaped):
+        if e < w:
+            if swaped:
                 y += s2
             else:
                 x += s1
@@ -505,29 +483,175 @@ def wu(p1, p2, color, step_count=False):
 
 
 def draw_line(dots):
-    history = []
-    history.append(copy.deepcopy(line_history[-1]))
-    print(len(line_history[-1]))
     for dot in dots:
-        tmp =  to_canva(dot[0:2])
+        tmp = to_canva(dot[0:2])
         point = [tmp[0], tmp[1], dot[2]]
         canvas_win.create_line(point[0], point[1], point[0] + 1, point[1], fill=point[2].hex, tag='line')
-        history.append(dot)
-    # line_history.append([])
-    line_history.append(copy.deepcopy(history))
-    xy_history.append(copy.deepcopy(xy_history[-1]))
-    print(len(line_history[-1]), len(line_history))
+
+
+# построить пучок по центру, длине и углу
+def spectra_1_win():
+    param_win = Tk()
+    param_win.title("Построить пучок")
+    param_win['bg'] = "grey"
+    param_win.geometry("240x250+400+250")
+    param_win.resizable(False, False)
+
+    coord_lbl = Label(param_win, text="Координаты центра", bg="pink", font="AvantGardeC 14", fg='black')
+    coord_lbl.place(x=35, y=20, width=170, height=20)
+
+    center_x_lbl = Label(param_win, text="X", bg="lightgrey", font="AvantGardeC 14", fg='black')
+    center_x_lbl.place(x=35, y=48, width=80, height=20)
+    center_x = Entry(param_win, font="AvantGardeC 14", bg='white', fg='black',
+                     borderwidth=0, insertbackground='black')
+    center_x.place(x=35, y=70, width=81, height=20)
+
+    center_y_lbl = Label(param_win, text="Y", bg="lightgrey", font="AvantGardeC 14", fg='black')
+    center_y_lbl.place(x=123, y=48, width=80, height=20)
+    center_y = Entry(param_win, font="AvantGardeC 14", bg='white', fg='black',
+                     borderwidth=0, insertbackground='black')
+    center_y.place(x=123, y=70, width=81, height=20)
+
+    width_lbl = Label(param_win, text="Длина", bg="pink", font="AvantGardeC 14", fg='black')
+    width_lbl.place(x=35, y=104, width=170, height=18)
+    width_spktr = Entry(param_win, font="AvantGardeC 14", bg='white', fg='black',
+                        borderwidth=0, insertbackground='black')
+    width_spktr.place(x=35, y=124, width=170, height=20)
+
+    angle_lbl = Label(param_win, text="Угол", bg="pink", font="AvantGardeC 14", fg='black')
+    angle_lbl.place(x=35, y=148, width=170, height=18)
+    angle_spktr = Entry(param_win, font="AvantGardeC 14", bg='white', fg='black',
+                        borderwidth=0, insertbackground='black')
+    angle_spktr.place(x=35, y=168, width=170, height=20)
+
+    return param_win, center_x, center_y, width_spktr, angle_spktr
+
+
+def go(width, angle, x, y):
+    try:
+        line_len = float(width.get())
+        angle_spin = float(angle.get())
+        center_x = int(x.get())
+        center_y = int(y.get())
+    except ValueError:
+        messagebox.showerror("Ошибка", "Неверно введены параметры построения")
+        return
+
+    if line_len <= 0:
+        messagebox.showerror("Ошибка", "Длина должна быть неотрицательна")
+        return
+
+    if angle_spin <= 0:
+        messagebox.showerror("Ошибка", "Угол должен быть неотрицателен")
+        return
+
+    p1 = [center_x, center_y]
+    spin = 0
+
+    while spin <= 2 * pi:
+        x2 = p1[0] + cos(spin) * line_len
+        y2 = p1[1] + sin(spin) * line_len
+
+        p2 = [x2, y2]
+
+        parse_methods(p1, p2, option)
+        spin += radians(angle_spin)
+
+
+def spectra_1_go():
+    spectra_win, spectra_x, spectra_y, spectra_width, spectra_angle = spectra_1_win()
+    spectra_1_but = Button(spectra_win, text="Построить", font="AvantGardeC 14", borderwidth=0,
+                           command=lambda: go(spectra_width, spectra_angle, spectra_x, spectra_y))
+    spectra_1_but.place(x=35, y=206, width=170, height=26)
+
+    spectra_win.mainloop()
+
+
+# построить пучок по центру, длине и углу
+def spectra_2_win():
+    sp_win = Tk()
+    sp_win.title("Построить пучок")
+    sp_win['bg'] = "grey"
+    sp_win.geometry("240x240+400+250")
+    sp_win.resizable(False, False)
+
+    coord_lbl = Label(sp_win, text="Координаты отрезка", bg="pink", font="AvantGardeC 14", fg='black')
+    coord_lbl.place(x=35, y=20, width=170, height=20)
+
+    sp_x1_lbl = Label(sp_win, text="X1", bg="lightgrey", font="AvantGardeC 14", fg='black')
+    sp_x1_lbl.place(x=35, y=48, width=80, height=20)
+    sp_x1 = Entry(sp_win, font="AvantGardeC 14", bg='white', fg='black',
+                  borderwidth=0, insertbackground='black')
+    sp_x1.place(x=35, y=70, width=81, height=20)
+
+    sp_y1_lbl = Label(sp_win, text="Y1", bg="lightgrey", font="AvantGardeC 14", fg='black')
+    sp_y1_lbl.place(x=123, y=48, width=80, height=20)
+    sp_y1 = Entry(sp_win, font="AvantGardeC 14", bg='white', fg='black',
+                     borderwidth=0, insertbackground='black')
+    sp_y1.place(x=123, y=70, width=81, height=20)
+
+    sp_x2_lbl = Label(sp_win, text="X2", bg="lightgrey", font="AvantGardeC 14", fg='black')
+    sp_x2_lbl.place(x=35, y=104, width=80, height=20)
+    sp_x2 = Entry(sp_win, font="AvantGardeC 14", bg='white', fg='black',
+                      borderwidth=0, insertbackground='black')
+    sp_x2.place(x=35, y=126, width=81, height=20)
+
+    sp_y2_lbl = Label(sp_win, text="Y2", bg="lightgrey", font="AvantGardeC 14", fg='black')
+    sp_y2_lbl.place(x=123, y=104, width=80, height=20)
+    sp_y2 = Entry(sp_win, font="AvantGardeC 14", bg='white', fg='black',
+                      borderwidth=0, insertbackground='black')
+    sp_y2.place(x=123, y=126, width=81, height=20)
+
+    angle_lbl = Label(sp_win, text="Угол", bg="pink", font="AvantGardeC 14", fg='black')
+    angle_lbl.place(x=35, y=160, width=170, height=20)
+    angle_sp = Entry(sp_win, font="AvantGardeC 14", bg='white', fg='black',
+                        borderwidth=0, insertbackground='black')
+    angle_sp.place(x=35, y=182, width=170, height=20)
+
+    return sp_win, sp_x1, sp_y1, sp_x2, sp_y2, angle_sp
+
+
+def spectra_2_go():
+    spectra_win, sp_x1, sp_y1, sp_x2, sp_y2, angle_sp = spectra_2_win()
+    spectra_2_but = Button(spectra_win, text="Построить", font="AvantGardeC 14",
+                           borderwidth=0, command=lambda: read_dot(END, dot_x.get(), dot_y.get(), 0))
+
+
+
+def draw_point(ev_x, ev_y, point, click_):
+    if len(point):
+        # canvas_win.delete('dot')
+        global x1_entry, y1_entry, x2_entry, y2_entry
+
+        if click_:
+            x, y = ev_x, ev_y
+        else:
+            x, y = to_canva([point[0] / m_board, point[1] / m_board])
+
+        if option.get() == 1:
+            x1_entry.delete(0, END)
+            y1_entry.delete(0, END)
+            x1_entry.insert(0, "%d" % point[0])
+            y1_entry.insert(0, "%d" % point[1])
+            canvas_win.delete('dot1')
+            canvas_win.create_oval(x - 2, y - 2, x + 2, y + 2,
+                                   outline='grey', fill='pink', activeoutline='lightgreen', width=2, tag='dot1')
+        elif option.get() == 2:
+            x2_entry.delete(0, END)
+            y2_entry.delete(0, END)
+            x2_entry.insert(0, "%d" % point[0])
+            y2_entry.insert(0, "%d" % point[1])
+            canvas_win.delete('dot2')
+            canvas_win.create_oval(x - 2, y - 2, x + 2, y + 2,
+                                   outline='grey', fill='pink', activeoutline='lightgreen', width=2, tag='dot2')
 
 
 # определение и запись координат точки по клику
 def click(event):
     if event.x < 0 or event.x > WIN_WIDTH * win_k or event.y < 0 or event.y > WIN_HEIGHT * win_k:
         return
-
-    global main_point
-    main_point = to_coords([event.x, event.y])
-
-    draw_main_point(event.x, event.y, PLUS)
+    point = to_coords([event.x, event.y])
+    draw_point(event.x, event.y, point, 1)
 
 
 # откат
@@ -595,28 +719,26 @@ def config(event):
         y1_lbl.place(x=158 * win_x, y=48 * win_y, width=110 * win_x, height=18 * win_y)
         x1_entry.place(x=33 * win_x, y=67 * win_y, width=110 * win_x, height=20 * win_y)
         y1_entry.place(x=158 * win_x, y=67 * win_y, width=110 * win_x, height=20 * win_y)
+        dot1.place(x=2 * win_x, y=58 * win_y)
 
         x2_lbl.place(x=33 * win_x, y=93 * win_y, width=110 * win_x, height=18 * win_y)
         y2_lbl.place(x=158 * win_x, y=93 * win_y, width=110 * win_x, height=18 * win_y)
         x2_entry.place(x=33 * win_x, y=112 * win_y, width=110 * win_x, height=20 * win_y)
         y2_entry.place(x=158 * win_x, y=112 * win_y, width=110 * win_x, height=20 * win_y)
+        dot2.place(x=2 * win_x, y=103 * win_y)
 
-        color_lbl.place(x=33 * win_x, y=150 * win_y, width=235 * win_x, height=20 * win_y)
-        color_combo.place(x=33 * win_x, y=172 * win_y, width=235 * win_x, height=24 * win_y)
+        bld.place(x=33 * win_x, y=290 * win_y, width=235 * win_x, height=26 * win_y)
+
+        clr.place(x=33 * win_x, y=147 * win_y, width=235 * win_x, height=26 * win_y)
 
         method_lbl.place(x=33 * win_x, y=200 * win_y, width=235 * win_x, height=20 * win_y)
         method_combo.place(x=33 * win_x, y=222 * win_y, width=235 * win_x, height=24 * win_y)
 
-        back_color_lbl.place(x=33 * win_x, y=250 * win_y, width=235 * win_x, height=20 * win_y)
-        back_color_combo.place(x=33 * win_x, y=272 * win_y, width=235 * win_x, height=24 * win_y)
-        bld.place(x=33 * win_x, y=300 * win_y, width=235 * win_x, height=25 * win_y)
+        bgc.place(x=33 * win_x, y=250 * win_y, width=235 * win_x, height=26 * win_y)
 
         spectra_lbl.place(x=33 * win_x, y=348 * win_y, width=235 * win_x, height=20 * win_y)
-        spectra_length_lbl.place(x=33 * win_x, y=371 * win_y, width=110 * win_x, height=20 * win_y)
-        spectra_angle_lbl.place(x=158 * win_x, y=371 * win_y, width=110 * win_x, height=20 * win_y)
-        spectra_length.place(x=33 * win_x, y=394 * win_y, width=111 * win_x, height=20 * win_y)
-        spectra_angle.place(x=158 * win_x, y=394 * win_y, width=110 * win_x, height=20 * win_y)
-        sct.place(x=33 * win_x, y=417 * win_y, width=235 * win_x, height=25 * win_y)
+        sp1.place(x=33 * win_x, y=371 * win_y, width=110 * win_x, height=25 * win_y)
+        sp2.place(x=158 * win_x, y=371 * win_y, width=110 * win_x, height=25 * win_y)
 
         lines_lbl.place(x=33 * win_x, y=465 * win_y, width=235 * win_x, height=20 * win_y)
         lines_step_lbl.place(x=33 * win_x, y=489 * win_y, width=235 * win_x, height=18 * win_y)
@@ -633,7 +755,6 @@ def config(event):
         # к начальным условиям
         bgn.place(x=157 * win_x, y=710 * win_y, width=109 * win_x, height=28 * win_y)
 
-
         # изменение размера
         resize_canv_lbl.place(x=30 * win_x, y=590 * win_y, width=235 * win_x, height=24 * win_y)
         pls.place(x=30 * win_x, y=617 * win_y, width=109 * win_x, height=26 * win_y)
@@ -643,7 +764,6 @@ def config(event):
 
         canvas_win.delete('all')
         draw_axes()
-        # draw_main_point(0, 0, MINUS)
 
 
 # масштабирование канваса
@@ -664,7 +784,7 @@ def change_size(plus_or_minus):
 
 
 def clean():
-    canvas_win.delete('line')
+    canvas_win.delete('line', 'dot1', 'dot2')
 
 
 # Окно tkinter
@@ -673,27 +793,30 @@ win['bg'] = 'grey'
 win.geometry("%dx%d" % (WIN_WIDTH, WIN_HEIGHT))
 win.title("Лабораторная работа #3")
 
+option = IntVar()
+option.set(1)
+
+canvas_bg = ((255, 255, 255), "#ffffff")
+
 # Канвас
-canvas_win = Canvas(win, bg="#ffffff")
+canvas_win = Canvas(win, bg=cu.Color(canvas_bg[1]))
 
 # Подписи функционала
 center_lbl = Label(text="Координаты отрезков", bg='pink', font="AvantGardeC 14", fg='black')
-shift_lbl = Label(text="Перемещение", bg='pink', font="AvantGardeC 14", fg='black')
-rotate_lbl = Label(text="Поворот", bg='pink', font="AvantGardeC 14", fg='black')
-resize_lbl = Label(text="Масштабирование", bg='pink', font="AvantGardeC 14", fg='black')
 
 # Поля ввода
 x1_lbl = Label(text="X1", bg='lightgrey', font="AvantGardeC 14", fg='black')
 y1_lbl = Label(text="Y1", bg='lightgrey', font="AvantGardeC 14", fg='black')
 x1_entry = Entry(font="AvantGardeC 14", bg='white', fg='black', borderwidth=0, insertbackground='black', justify='center')
 y1_entry = Entry(font="AvantGardeC 14", bg='white', fg='black', borderwidth=0, insertbackground='black', justify='center')
+dot1 = Radiobutton(variable=option, value=1, bg="grey", activebackground="grey", highlightbackground="grey")
 
 x2_lbl = Label(text="X2", bg='lightgrey', font="AvantGardeC 14", fg='black')
 y2_lbl = Label(text="Y2", bg='lightgrey', font="AvantGardeC 14", fg='black')
 x2_entry = Entry(font="AvantGardeC 14", bg='white', fg='black', borderwidth=0, insertbackground='black', justify='center')
 y2_entry = Entry(font="AvantGardeC 14", bg='white', fg='black', borderwidth=0, insertbackground='black', justify='center')
+dot2 = Radiobutton(variable=option, value=2, bg="grey", activebackground="grey", highlightbackground="grey")
 
-color_lbl = Label(text="Цвет отрезка", bg='pink', font="AvantGardeC 14", fg='black')
 color_combo = ttk.Combobox(win, values=["Red", "Black", "Green", "White"])
 
 method_lbl = Label(text="Алгоритм", bg='pink', font="AvantGardeC 14", fg='black')
@@ -704,10 +827,6 @@ back_color_lbl = Label(text="Цвет фона", bg='pink', font="AvantGardeC 14
 back_color_combo = ttk.Combobox(win, values=["January", "February", "March", "April"])
 
 spectra_lbl = Label(text="Построить пучок", bg='pink', font="AvantGardeC 14", fg='black')
-spectra_length_lbl = Label(text="Длина", bg='lightgrey', font="AvantGardeC 14", fg='black')
-spectra_angle_lbl = Label(text="Угол", bg='lightgrey', font="AvantGardeC 14", fg='black')
-spectra_length = Entry(font="AvantGardeC 14", bg='white', fg='black', borderwidth=0, insertbackground='black', justify='center')
-spectra_angle = Entry(font="AvantGardeC 14", bg='white', fg='black', borderwidth=0, insertbackground='black', justify='center')
 
 lines_lbl = Label(text="Построить множество отрезков", bg='pink', font="AvantGardeC 14", fg='black')
 lines_step_lbl = Label(text="Шаг", bg='lightgrey', font="AvantGardeC 14", fg='black')
@@ -715,27 +834,39 @@ lines_step_length = Entry(font="AvantGardeC 14", bg='white', fg='black', borderw
 
 resize_canv_lbl = Label(text="Масштабирование канваса", bg='lightgrey', font="AvantGardeC 14", fg='black')
 
-x1_entry.insert(END, 200)
-y1_entry.insert(END, 200)
-x2_entry.insert(END, 700)
-y2_entry.insert(END, 220)
+x1_entry.insert(END, 0)
+y1_entry.insert(END, 0)
+x2_entry.insert(END, 250)
+y2_entry.insert(END, 250)
 color_combo.current(0)
 method_combo.current(0)
 
 
 # Список точек
-line_history = [[0, 0]] # история координат отрезков
+line_history = [[0, 0]]  # история координат отрезков
 xy_history = [-400, -350, -300, -250, -200, -150, -100, -50,
-            0, 50, 100, 150, 200, 250, 300, 350, 400] # история координат на оси
+            0, 50, 100, 150, 200, 250, 300, 350, 400]  # история координат на оси
 xy_start = [-400, -350, -300, -250, -200, -150, -100, -50,
             0, 50, 100, 150, 200, 250, 300, 350, 400]
 xy_current = [-400, -350, -300, -250, -200, -150, -100, -50,
             0, 50, 100, 150, 200, 250, 300, 350, 400]
 
 
+def choose_bg_color():
+    global canvas_bg
+    canvas_bg = colorchooser.askcolor()
+    print(canvas_bg)
+    canvas_win = Canvas(win, bg=cu.Color(canvas_bg[1]))
+
+
+def choose_line_color():
+    global current_color
+    current_color = colorchooser.askcolor()
+
+
 # Кнопки
 bld = Button(text="Построить отрезок", font="AvantGardeC 14",
-             borderwidth=0, command=lambda: parse_line(method_combo.current(), color_combo.current()))
+             borderwidth=0, command=lambda: parse_line(method_combo.current()))
 sct = Button(text="Построить", font="AvantGardeC 14",
              borderwidth=0)
 lns = Button(text="Построить", font="AvantGardeC 14",
@@ -754,6 +885,14 @@ pls = Button(text="+", font="AvantGardeC 14",
              borderwidth=0, command=lambda: change_size(PLUS))
 mns = Button(text="-", font="AvantGardeC 14",
              borderwidth=0, command=lambda: change_size(MINUS))
+sp1 = Button(text="по длине и углу", font="AvantGardeC 12",
+             borderwidth=0, command=lambda: spectra_1_go())
+sp2 = Button(text="по отрезку и углу", font="AvantGardeC 12",
+             borderwidth=0, command=lambda: spectra_2_win())
+clr = Button(text="Цвет отрезка", font="AvantGardeC 14",
+             borderwidth=0, command=lambda: choose_line_color())
+bgc = Button(text="Цвет фона", font="AvantGardeC 14",
+             borderwidth=0, command=lambda: choose_bg_color())
 
 win_x = win_y = 1  # коэффициенты масштабирования окна по осям
 win_k = 1  # коэффициент масштабирования окна (для квадратизации)
@@ -766,6 +905,7 @@ coord_center = [400, 400]  # центр координат (в координа�
 k_board = 4
 m_board = 1 # коэффициент масштабирования при изменении масштаба канваса
 
+current_color = (0, 0, 0)
 
 canvas_win.bind('<1>', click)
 
@@ -779,7 +919,16 @@ add_menu.add_command(label='Выход', command=exit)
 menu.add_cascade(label='Help', menu=add_menu)
 win.config(menu=menu)
 
+
+def change_option_click(event):
+    global option
+    if option.get() == 1:
+        option.set(2)
+    elif option.get() == 2:
+        option.set(1)
+
+
 win.bind("<Configure>", config)
-win.bind("<<ComboboxSelected>>", )
+win.bind("q", change_option_click)
 
 win.mainloop()
