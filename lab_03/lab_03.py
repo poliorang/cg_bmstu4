@@ -30,24 +30,6 @@ AUTHOR = "\n\nЕгорова Полина ИУ7-44Б"
 def save_state():
     global xy_history
     xy_history.append(copy.deepcopy(xy_current))
-    # main_history.append(main_point)
-
-# прорисовка ключевой точки
-# def draw_main_point(ev_x, ev_y, param):
-#     if len(main_point):
-#         canvas_win.delete('dot')
-#
-#         main_x.delete(0, END)
-#         main_y.delete(0, END)
-#         main_x.insert(0, "%.1f" % main_point[0])
-#         main_y.insert(0, "%.1f" % main_point[1])
-#
-#         if param:
-#             x, y = ev_x, ev_y
-#         else:
-#             x, y = to_canva([main_point[0] / m_board, main_point[1] / m_board])
-#         canvas_win.create_oval(x - 2, y - 2, x + 2, y + 2,
-#                                outline='grey', fill='pink', activeoutline='lightgreen', width=2, tag='dot')
 
 
 # координаты точки из канвасовских в фактические
@@ -62,8 +44,8 @@ def to_coords(dot):
 # координаты точки из фактических в канвасовские
 def to_canva(dot):
     global m
-    x = coord_center[0] + dot[0]
-    y = coord_center[1] - dot[1]
+    x = coord_center[0] + dot[0] / m_board
+    y = coord_center[1] - dot[1] / m_board
 
     return [x, y]
 
@@ -485,10 +467,29 @@ def lib_method(p1, p2, color):
 
 
 def draw_line(dots):
+    global xy_history, line_history
     for dot in dots:
         tmp = to_canva(dot[0:2])
         point = [tmp[0], tmp[1], dot[2]]
         canvas_win.create_line(point[0], point[1], point[0] + 1, point[1], fill=point[2].hex, tag='line')
+    xy_history.append(xy_current)
+    line_history.append(dots)
+    canvas_win.delete('dot1', 'dot2')
+
+
+def draw_without_history(dots):
+    for dot in dots:
+        tmp = to_canva(dot[0:2])
+        point = [tmp[0], tmp[1], dot[2]]
+        canvas_win.create_line(point[0], point[1], point[0] + 1, point[1], fill=point[2].hex, tag='line')
+
+
+def draw_all_lines(array_dots, history_param):
+    for dots in array_dots:
+        if history_param:
+            draw_without_history(dots)
+        else:
+            draw_line(dots)
 
 
 def time_go():
@@ -674,6 +675,7 @@ def spectra_1_win(angle_param):
 
     return param_win, center_x, center_y, width_spktr
 
+
 def build_spectra_1(width, angle, x, y):
     try:
         line_len = float(width.get())
@@ -804,13 +806,12 @@ def spectra_2_go():
 
 def draw_point(ev_x, ev_y, point, click_):
     if len(point):
-        # canvas_win.delete('dot')
         global x1_entry, y1_entry, x2_entry, y2_entry
 
         if click_:
             x, y = ev_x, ev_y
         else:
-            x, y = to_canva([point[0] / m_board, point[1] / m_board])
+            x, y = to_canva([point[0], point[1]])
 
         if option.get() == 1:
             x1_entry.delete(0, END)
@@ -840,28 +841,28 @@ def click(event):
 
 # откат
 def undo():
-    global xy_current, line_history
-
-    print(len(line_history))
+    global xy_current, xy_history, line_history
 
     if len(line_history) == 0:
         messagebox.showerror("Внимание", "Достигнуто исходное состояние")
         return
-    canvas_win.delete('car', 'line')
-    line_history.pop()
-    xy_current = xy_history[-1]
-    draw_line(line_history[-1])
-    draw_axes()
 
+    canvas_win.delete('line', 'coord')
+    line_history.pop()
     xy_history.pop()
+
+    xy_current = xy_history[-1]
+
+    draw_all_lines(line_history, MINUS)
+    draw_axes()
 
 
 # оси координат и сетка
 def draw_axes():
     canvas_win.create_line(0, size / 2, size - 2, size / 2, fill='grey',
-                  width=1, arrow=LAST, activefill='lightgreen', arrowshape="10 20 6")
+                           width=1, arrow=LAST, activefill='lightgreen', arrowshape="10 20 6")
     canvas_win.create_line(size / 2, size, size / 2, 2, fill='grey',
-                  width=1, arrow=LAST, activefill='lightgreen', arrowshape="10 20 6")
+                           width=1, arrow=LAST, activefill='lightgreen', arrowshape="10 20 6")
 
     s = int(size)
     j = 0
@@ -946,22 +947,27 @@ def config(event):
 
 # масштабирование канваса
 def change_size(plus_or_minus):
-    global k_board, m_board, xy_current
+    global m_board, xy_current
     save_state()
     canvas_win.delete('coord', 'line')
 
     if plus_or_minus == 0:
-        # k_board //= 2
         m_board *= 2
         xy_current = [xy_current[i] * 2 for i in range(len(xy_current))]
 
     else:
-        # k_board *= 2
         m_board /= 2
         xy_current = [xy_current[i] / 2 for i in range(len(xy_current))]
 
+    xy_history.append(xy_current)
+    # line_history.append(line_history[-1])
+    draw_axes()
+    draw_all_lines(line_history, PLUS)
 
+
+#  отчистака канваса
 def clean_canvas():
+    line_history.clear()
     canvas_win.delete('line', 'dot1', 'dot2')
 
 
@@ -975,9 +981,8 @@ win.title("Лабораторная работа #3")
 option = IntVar()
 option.set(1)
 
-canvas_bg = ((255, 255, 255), "#ffffff")
-
 # Канвас
+canvas_bg = ((255, 255, 255), "#ffffff")
 canvas_win = Canvas(win, bg=cu.Color(canvas_bg[1]))
 
 # Подписи функционала
@@ -1013,24 +1018,23 @@ spectra_lbl = Label(text="Построить пучок", bg='pink', font="Avant
 resize_canv_lbl = Label(text="Масштабирование канваса", bg='lightgrey', font="AvantGardeC 14", fg='black')
 
 
-
-
 # Список точек
-line_history = [[0, 0]]  # история координат отрезков
-xy_history = [-400, -350, -300, -250, -200, -150, -100, -50,
-            0, 50, 100, 150, 200, 250, 300, 350, 400]  # история координат на оси
-xy_start = [-400, -350, -300, -250, -200, -150, -100, -50,
-            0, 50, 100, 150, 200, 250, 300, 350, 400]
+line_history = [[]]  # история координат отрезков
+
 xy_current = [-400, -350, -300, -250, -200, -150, -100, -50,
             0, 50, 100, 150, 200, 250, 300, 350, 400]
+xy_history = []  # история координат на оси
+xy_history.append(xy_current)
 
 
-def choose_bg_color():
+# изменение цвета фона
+def change_bg_color():
     global canvas_bg
     canvas_bg = colorchooser.askcolor()
     canvas_win.configure(bg=cu.Color(canvas_bg[1]))
 
 
+# изменение цвета отрезка
 def choose_line_color():
     global current_color
     current_color = colorchooser.askcolor()
@@ -1062,7 +1066,7 @@ sp2 = Button(text="по отрезку и углу", font="AvantGardeC 12",
 clr = Button(text="Цвет отрезка", font="AvantGardeC 14",
              borderwidth=0, command=lambda: choose_line_color())
 bgc = Button(text="Цвет фона", font="AvantGardeC 14",
-             borderwidth=0, command=lambda: choose_bg_color())
+             borderwidth=0, command=lambda: change_bg_color())
 
 win_x = win_y = 1  # коэффициенты масштабирования окна по осям
 win_k = 1  # коэффициент масштабирования окна (для квадратизации)
