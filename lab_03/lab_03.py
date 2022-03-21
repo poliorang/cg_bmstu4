@@ -1,8 +1,11 @@
 import copy
 from tkinter import messagebox, ttk, colorchooser
 from tkinter import *
-from math import radians, cos, sin, fabs, floor, pi
+from math import radians, cos, sin, fabs, floor, pi, sqrt
 import colorutils as cu
+import matplotlib.pyplot as plt
+import numpy as np
+import time
 
 WIN_WIDTH = 1200
 WIN_HEIGHT = 800
@@ -13,29 +16,14 @@ WIDTH = 100.0
 PLUS = 1
 MINUS = 0
 
-TASK = "Геометрические преобразования.\n\n" \
-       "Нарисовать исходный рисунок. " \
-       "Осуществить возможность его перемещения, " \
-       "масштабирования и поворота."
 
-MAIN_POINT = "Ключевая точка - точка, относительно которой "\
-             "будет производиться поворот, масштабирование."
+TASK = "Алгоритмы построения отрезков.\n\n" \
+       "Реализовать возможность построения " \
+       "отрезков методами Брезенхема, Ву, ЦДА, " \
+       "построение пучка отрезков и " \
+       "сравнение времени и ступенчатости."
 
 AUTHOR = "\n\nЕгорова Полина ИУ7-44Б"
-
-
-# связывает кнопку смещения и функцию
-def sft_go():
-    try:
-        shx = float(shift_x.get())
-        shy = float(shift_y.get())
-        save_state()
-        shift_car([shx, shy])
-    except ValueError:
-        messagebox.showerror('Ошибка', "Не введены или некорректны значения смещения")
-
-
-
 
 
 # сохранить в историю положение рисунка
@@ -80,6 +68,14 @@ def to_canva(dot):
     return [x, y]
 
 
+def distance(point1, point2):
+    x1 = max(point1[0], point2[0])
+    x2 = min(point1[0], point2[0])
+    y1 = max(point1[1], point2[1])
+    y2 = min(point1[1], point2[1])
+    return sqrt(((y2 - y1) * (y2 - y1)) + (x2 - x1) * (x2 - x1))
+
+
 def sign(diff):
     if diff < 0:
         return -1
@@ -96,7 +92,7 @@ def parse_line(option):
         x2 = int(x2_entry.get())
         y2 = int(y2_entry.get())
         print(x1)
-    except:
+    except ValueError:
         messagebox.showerror("Ошибка", "Неверно введены координаты")
         return
 
@@ -107,7 +103,7 @@ def parse_line(option):
 
 
 def parse_methods(p1, p2, option, draw=True):
-    # print("Method = ", option)
+    print("Method = ", option)
     color = cu.Color(current_color[0])
 
     if option == 0:
@@ -142,6 +138,7 @@ def parse_methods(p1, p2, option, draw=True):
 
     elif option == 5:
         lib_method(p1, p2, color)
+
     else:
         messagebox.showerror("Ошибка", "Неизвестный алгоритм")
 
@@ -464,7 +461,6 @@ def wu(p1, p2, color, step_count=False):
             d2 = 1 - d1
 
             dot1 = [x_cur, int(y1) + 1, choose_color(color, round(fabs(d2) * intens))]
-
             dot2 = [x_cur, int(y1), choose_color(color, round(fabs(d1) * intens))]
 
             if step_count and x_cur < x2:
@@ -482,6 +478,12 @@ def wu(p1, p2, color, step_count=False):
         return dots
 
 
+def lib_method(p1, p2, color):
+    p_1 = to_canva(p1)
+    p_2 = to_canva(p2)
+    canvas_win.create_line(p_1[0], p_1[1], p_2[0], p_2[1], fill=color.hex, tag='line')
+
+
 def draw_line(dots):
     for dot in dots:
         tmp = to_canva(dot[0:2])
@@ -489,8 +491,147 @@ def draw_line(dots):
         canvas_win.create_line(point[0], point[1], point[0] + 1, point[1], fill=point[2].hex, tag='line')
 
 
+def time_go():
+    spectra_win, spectra_x, spectra_y, spectra_width, spectra_angle = spectra_1_win(PLUS)
+    spectra_1_but = Button(spectra_win, text="Засечь время", font="AvantGardeC 14", borderwidth=0,
+                           command=lambda: time_measure(spectra_width, spectra_angle, spectra_x, spectra_y))
+    spectra_1_but.place(x=35, y=206, width=170, height=26)
+
+    spectra_win.mainloop()
+
+
+def time_measure(width, angle, center_x, center_y):
+    time_mes = []
+
+    try:
+        line_len = float(width.get())
+        angle_spin = float(angle.get())
+        center_x = int(center_x.get())
+        center_y = int(center_y.get())
+    except ValueError:
+        messagebox.showerror("Ошибка", "Неверно введены координаты")
+        return
+
+    if line_len <= 0:
+        messagebox.showerror("Ошибка", "Длина должна быть неотрицательна")
+        return
+
+    if angle_spin <= 0:
+        messagebox.showerror("Ошибка", "Угол должен быть неотрицателен")
+        return
+
+    for i in range(0, 6):
+        res_time = 0
+
+        for _ in range(20):
+            time_start = 0
+            time_end = 0
+
+            p1 = [center_x, center_y]
+            spin = 0
+
+            while spin <= 2 * pi:
+                x2 = p1[0] + cos(spin) * line_len
+                y2 = p1[1] + sin(spin) * line_len
+
+                p2 = [x2, y2]
+
+                time_start += time.time()
+                parse_methods(p1, p2, i, draw=False)
+                time_end += time.time()
+
+                spin += radians(angle_spin)
+
+            res_time += (time_end - time_start)
+            clean_canvas()
+
+        time_mes.append(res_time / 20)
+
+    plt.figure(figsize=(14, 6))
+
+    plt.title(f"Замеры времени для различных методов\n"
+              f"[длина отрезка = {line_len} и угол = {angle_spin}˚]")
+
+    positions = np.arange(6)
+    methods = ["Брезенхем (int)", "Брезенхем (float)", "Брезенхем (сглаживание)",
+               "ЦДА", "Ву", "Библиотечная"]
+    plt.xticks(positions, methods)
+
+    plt.ylabel("Время")
+    plt.bar(positions, time_mes, align="center", alpha=1)
+
+    plt.show()
+
+
+def steps_go():
+    spectra_win, spectra_x, spectra_y, spectra_width = spectra_1_win(MINUS)
+    spectra_1_but = Button(spectra_win, text="Засечь время", font="AvantGardeC 14", borderwidth=0,
+                           command=lambda: steps_measure(spectra_width, spectra_x, spectra_y))
+    spectra_1_but.place(x=35, y=206, width=170, height=26)
+
+    spectra_win.mainloop()
+
+
+def steps_measure(width, center_x, center_y):
+    try:
+        line_len = float(width.get())
+        center_x = int(center_x.get())
+        center_y = int(center_y.get())
+    except ValueError:
+        messagebox.showerror("Ошибка", "Неверно введены координаты")
+        return
+
+    if line_len <= 0:
+        messagebox.showerror("Ошибка", "Длина линии должна быть выше нуля")
+        return
+
+    p1 = [center_x, center_y]
+
+    spin = 0
+
+    angle_spin = [i for i in range(0, 91, 2)]
+
+    cda_steps = []
+    wu_steps = []
+    bres_int_steps = []
+    bres_float_steps = []
+    bres_smooth_steps = []
+
+    while spin <= pi / 2 + 0.01:
+        x2 = p1[0] + cos(spin) * line_len
+        y2 = p1[1] + sin(spin) * line_len
+
+        p2 = [x2, y2]
+
+        cda_steps.append(cda_method(p1, p2, (255, 255, 255), step_count=True))
+        wu_steps.append(wu(p1, p2, (255, 255, 255), step_count=True))
+        bres_int_steps.append(bresenham_int(p1, p2, (255, 255, 255), step_count=True))
+        bres_float_steps.append(bresenham_float(p1, p2, (255, 255, 255), step_count=True))
+        bres_smooth_steps.append(bresenham_smooth(p1, p2, (255, 255, 255), step_count=True))
+
+        spin += radians(2)
+
+    plt.figure(figsize=(15, 6))
+
+    plt.title(f"Замеры ступенчатости для различных методов\n"
+              f"[длина отрезка = {line_len}]")
+
+    plt.xlabel("Угол (в градусах)")
+    plt.ylabel("Количество ступенек")
+
+    plt.plot(angle_spin, cda_steps, label="ЦДА")
+    plt.plot(angle_spin, wu_steps, label="Ву")
+    plt.plot(angle_spin, bres_float_steps, "-.", label="Брезенхем (float/int)")
+    plt.plot(angle_spin, bres_smooth_steps, ":", label="Брезенхем\n(сглаживание)")
+
+    plt.xticks(np.arange(91, step=5))
+    plt.legend()
+
+    plt.show()
+
+
 # построить пучок по центру, длине и углу
-def spectra_1_win():
+def spectra_1_win(angle_param):
     param_win = Tk()
     param_win.title("Построить пучок")
     param_win['bg'] = "grey"
@@ -503,31 +644,37 @@ def spectra_1_win():
     center_x_lbl = Label(param_win, text="X", bg="lightgrey", font="AvantGardeC 14", fg='black')
     center_x_lbl.place(x=35, y=48, width=80, height=20)
     center_x = Entry(param_win, font="AvantGardeC 14", bg='white', fg='black',
-                     borderwidth=0, insertbackground='black')
+                     borderwidth=0, insertbackground='black', justify='center')
+    center_x.insert(END, '0')
     center_x.place(x=35, y=70, width=81, height=20)
 
     center_y_lbl = Label(param_win, text="Y", bg="lightgrey", font="AvantGardeC 14", fg='black')
     center_y_lbl.place(x=123, y=48, width=80, height=20)
     center_y = Entry(param_win, font="AvantGardeC 14", bg='white', fg='black',
-                     borderwidth=0, insertbackground='black')
+                     borderwidth=0, insertbackground='black', justify='center')
+    center_y.insert(END, '0')
     center_y.place(x=123, y=70, width=81, height=20)
 
     width_lbl = Label(param_win, text="Длина", bg="pink", font="AvantGardeC 14", fg='black')
     width_lbl.place(x=35, y=104, width=170, height=18)
     width_spktr = Entry(param_win, font="AvantGardeC 14", bg='white', fg='black',
-                        borderwidth=0, insertbackground='black')
+                        borderwidth=0, insertbackground='black', justify='center')
+    width_spktr.insert(END, '200')
     width_spktr.place(x=35, y=124, width=170, height=20)
 
-    angle_lbl = Label(param_win, text="Угол", bg="pink", font="AvantGardeC 14", fg='black')
-    angle_lbl.place(x=35, y=148, width=170, height=18)
-    angle_spktr = Entry(param_win, font="AvantGardeC 14", bg='white', fg='black',
-                        borderwidth=0, insertbackground='black')
-    angle_spktr.place(x=35, y=168, width=170, height=20)
+    if angle_param:
+        angle_lbl = Label(param_win, text="Угол", bg="pink", font="AvantGardeC 14", fg='black')
+        angle_lbl.place(x=35, y=148, width=170, height=18)
+        angle_spktr = Entry(param_win, font="AvantGardeC 14", bg='white', fg='black',
+                            borderwidth=0, insertbackground='black', justify='center')
+        angle_spktr.insert(END, '1')
+        angle_spktr.place(x=35, y=168, width=170, height=20)
 
-    return param_win, center_x, center_y, width_spktr, angle_spktr
+        return param_win, center_x, center_y, width_spktr, angle_spktr
 
+    return param_win, center_x, center_y, width_spktr
 
-def go(width, angle, x, y):
+def build_spectra_1(width, angle, x, y):
     try:
         line_len = float(width.get())
         angle_spin = float(angle.get())
@@ -554,25 +701,25 @@ def go(width, angle, x, y):
 
         p2 = [x2, y2]
 
-        parse_methods(p1, p2, option)
+        parse_methods(p1, p2, option.get())
         spin += radians(angle_spin)
 
 
 def spectra_1_go():
-    spectra_win, spectra_x, spectra_y, spectra_width, spectra_angle = spectra_1_win()
+    spectra_win, spectra_x, spectra_y, spectra_width, spectra_angle = spectra_1_win(PLUS)
     spectra_1_but = Button(spectra_win, text="Построить", font="AvantGardeC 14", borderwidth=0,
-                           command=lambda: go(spectra_width, spectra_angle, spectra_x, spectra_y))
+                           command=lambda: build_spectra_1(spectra_width, spectra_angle, spectra_x, spectra_y))
     spectra_1_but.place(x=35, y=206, width=170, height=26)
 
     spectra_win.mainloop()
 
 
-# построить пучок по центру, длине и углу
+# построить пучок по отрезку и углу
 def spectra_2_win():
     sp_win = Tk()
     sp_win.title("Построить пучок")
     sp_win['bg'] = "grey"
-    sp_win.geometry("240x240+400+250")
+    sp_win.geometry("240x260+400+250")
     sp_win.resizable(False, False)
 
     coord_lbl = Label(sp_win, text="Координаты отрезка", bg="pink", font="AvantGardeC 14", fg='black')
@@ -581,41 +728,78 @@ def spectra_2_win():
     sp_x1_lbl = Label(sp_win, text="X1", bg="lightgrey", font="AvantGardeC 14", fg='black')
     sp_x1_lbl.place(x=35, y=48, width=80, height=20)
     sp_x1 = Entry(sp_win, font="AvantGardeC 14", bg='white', fg='black',
-                  borderwidth=0, insertbackground='black')
+                  borderwidth=0, insertbackground='black', justify='center')
+    sp_x1.insert(END, '0')
     sp_x1.place(x=35, y=70, width=81, height=20)
 
     sp_y1_lbl = Label(sp_win, text="Y1", bg="lightgrey", font="AvantGardeC 14", fg='black')
     sp_y1_lbl.place(x=123, y=48, width=80, height=20)
     sp_y1 = Entry(sp_win, font="AvantGardeC 14", bg='white', fg='black',
-                     borderwidth=0, insertbackground='black')
+                  borderwidth=0, insertbackground='black', justify='center')
+    sp_y1.insert(END, '0')
     sp_y1.place(x=123, y=70, width=81, height=20)
 
     sp_x2_lbl = Label(sp_win, text="X2", bg="lightgrey", font="AvantGardeC 14", fg='black')
     sp_x2_lbl.place(x=35, y=104, width=80, height=20)
     sp_x2 = Entry(sp_win, font="AvantGardeC 14", bg='white', fg='black',
-                      borderwidth=0, insertbackground='black')
+                  borderwidth=0, insertbackground='black', justify='center')
+    sp_x2.insert(END, '0')
     sp_x2.place(x=35, y=126, width=81, height=20)
 
     sp_y2_lbl = Label(sp_win, text="Y2", bg="lightgrey", font="AvantGardeC 14", fg='black')
     sp_y2_lbl.place(x=123, y=104, width=80, height=20)
     sp_y2 = Entry(sp_win, font="AvantGardeC 14", bg='white', fg='black',
-                      borderwidth=0, insertbackground='black')
+                  borderwidth=0, insertbackground='black', justify='center')
+    sp_y2.insert(END, '200')
     sp_y2.place(x=123, y=126, width=81, height=20)
 
     angle_lbl = Label(sp_win, text="Угол", bg="pink", font="AvantGardeC 14", fg='black')
     angle_lbl.place(x=35, y=160, width=170, height=20)
     angle_sp = Entry(sp_win, font="AvantGardeC 14", bg='white', fg='black',
-                        borderwidth=0, insertbackground='black')
+                     borderwidth=0, insertbackground='black', justify='center')
+    angle_sp.insert(END, '1')
     angle_sp.place(x=35, y=182, width=170, height=20)
 
     return sp_win, sp_x1, sp_y1, sp_x2, sp_y2, angle_sp
 
 
-def spectra_2_go():
-    spectra_win, sp_x1, sp_y1, sp_x2, sp_y2, angle_sp = spectra_2_win()
-    spectra_2_but = Button(spectra_win, text="Построить", font="AvantGardeC 14",
-                           borderwidth=0, command=lambda: read_dot(END, dot_x.get(), dot_y.get(), 0))
+def build_spectra_2(x_1, y_1, x_2, y_2, angle):
+    try:
+        x1 = int(x_1.get())
+        y1 = int(y_1.get())
+        x2 = int(x_2.get())
+        y2 = int(y_2.get())
+        angle_spin = int(angle.get())
+    except ValueError:
+        messagebox.showerror("Ошибка", "Неверно введены параметры построения")
+        return
 
+    if angle_spin <= 0:
+        messagebox.showerror("Ошибка", "Угол должен быть неотрицателен")
+        return
+
+    line_len = distance([x1, y1], [x2, y2])
+
+    p1 = [x1, y1]
+    spin = 0
+
+    while spin <= 2 * pi:
+        x2 = p1[0] + cos(spin) * line_len
+        y2 = p1[1] + sin(spin) * line_len
+
+        p2 = [x2, y2]
+
+        parse_methods(p1, p2, option.get())
+        spin += radians(angle_spin)
+
+
+def spectra_2_go():
+    sp_win, sp_x1, sp_y1, sp_x2, sp_y2, angle_sp = spectra_2_win()
+    spectra_2_but = Button(sp_win, text="Построить", font="AvantGardeC 14", borderwidth=0,
+                           command=lambda: build_spectra_2(sp_x1, sp_y1, sp_x2, sp_y2, angle_sp))
+    spectra_2_but.place(x=35, y=206, width=170, height=26)
+
+    sp_win.mainloop()
 
 
 def draw_point(ev_x, ev_y, point, click_):
@@ -670,7 +854,6 @@ def undo():
     draw_axes()
 
     xy_history.pop()
-
 
 
 # оси координат и сетка
@@ -740,11 +923,6 @@ def config(event):
         sp1.place(x=33 * win_x, y=371 * win_y, width=110 * win_x, height=25 * win_y)
         sp2.place(x=158 * win_x, y=371 * win_y, width=110 * win_x, height=25 * win_y)
 
-        lines_lbl.place(x=33 * win_x, y=465 * win_y, width=235 * win_x, height=20 * win_y)
-        lines_step_lbl.place(x=33 * win_x, y=489 * win_y, width=235 * win_x, height=18 * win_y)
-        lines_step_length.place(x=33 * win_x, y=509 * win_y, width=235 * win_x, height=20 * win_y)
-        lns.place(x=33 * win_x, y=531 * win_y, width=235 * win_x, height=25 * win_y)
-
         # условие
         con.place(x=30 * win_x, y=650 * win_y, width=235 * win_x, height=28 * win_y)
         # сравнения
@@ -783,7 +961,7 @@ def change_size(plus_or_minus):
         xy_current = [xy_current[i] / 2 for i in range(len(xy_current))]
 
 
-def clean():
+def clean_canvas():
     canvas_win.delete('line', 'dot1', 'dot2')
 
 
@@ -793,6 +971,7 @@ win['bg'] = 'grey'
 win.geometry("%dx%d" % (WIN_WIDTH, WIN_HEIGHT))
 win.title("Лабораторная работа #3")
 
+# переменная для радиобаттона
 option = IntVar()
 option.set(1)
 
@@ -804,42 +983,36 @@ canvas_win = Canvas(win, bg=cu.Color(canvas_bg[1]))
 # Подписи функционала
 center_lbl = Label(text="Координаты отрезков", bg='pink', font="AvantGardeC 14", fg='black')
 
-# Поля ввода
 x1_lbl = Label(text="X1", bg='lightgrey', font="AvantGardeC 14", fg='black')
 y1_lbl = Label(text="Y1", bg='lightgrey', font="AvantGardeC 14", fg='black')
-x1_entry = Entry(font="AvantGardeC 14", bg='white', fg='black', borderwidth=0, insertbackground='black', justify='center')
-y1_entry = Entry(font="AvantGardeC 14", bg='white', fg='black', borderwidth=0, insertbackground='black', justify='center')
+x1_entry = Entry(font="AvantGardeC 14", bg='white', fg='black',
+                 borderwidth=0, insertbackground='black', justify='center')
+y1_entry = Entry(font="AvantGardeC 14", bg='white', fg='black',
+                 borderwidth=0, insertbackground='black', justify='center')
+x1_entry.insert(END, 0)
+y1_entry.insert(END, 0)
 dot1 = Radiobutton(variable=option, value=1, bg="grey", activebackground="grey", highlightbackground="grey")
 
 x2_lbl = Label(text="X2", bg='lightgrey', font="AvantGardeC 14", fg='black')
 y2_lbl = Label(text="Y2", bg='lightgrey', font="AvantGardeC 14", fg='black')
-x2_entry = Entry(font="AvantGardeC 14", bg='white', fg='black', borderwidth=0, insertbackground='black', justify='center')
-y2_entry = Entry(font="AvantGardeC 14", bg='white', fg='black', borderwidth=0, insertbackground='black', justify='center')
+x2_entry = Entry(font="AvantGardeC 14", bg='white', fg='black',
+                 borderwidth=0, insertbackground='black', justify='center')
+y2_entry = Entry(font="AvantGardeC 14", bg='white', fg='black',
+                 borderwidth=0, insertbackground='black', justify='center')
+x2_entry.insert(END, 250)
+y2_entry.insert(END, 250)
 dot2 = Radiobutton(variable=option, value=2, bg="grey", activebackground="grey", highlightbackground="grey")
 
-color_combo = ttk.Combobox(win, values=["Red", "Black", "Green", "White"])
-
 method_lbl = Label(text="Алгоритм", bg='pink', font="AvantGardeC 14", fg='black')
-method_combo = ttk.Combobox(win, values=["Брезенхем (целые)", "Брезенхем (вещ)", "Брезенхем (устран. ступ.)", "ЦДА",
-                                         "Ву", "Библиотечный"])
-
-back_color_lbl = Label(text="Цвет фона", bg='pink', font="AvantGardeC 14", fg='black')
-back_color_combo = ttk.Combobox(win, values=["January", "February", "March", "April"])
+method_combo = ttk.Combobox(win, values=["Брезенхем (целые)", "Брезенхем (вещ)", "Брезенхем (устран. ступ.)",
+                                         "ЦДА", "Ву", "Библиотечный"])
+method_combo.current(0)
 
 spectra_lbl = Label(text="Построить пучок", bg='pink', font="AvantGardeC 14", fg='black')
 
-lines_lbl = Label(text="Построить множество отрезков", bg='pink', font="AvantGardeC 14", fg='black')
-lines_step_lbl = Label(text="Шаг", bg='lightgrey', font="AvantGardeC 14", fg='black')
-lines_step_length = Entry(font="AvantGardeC 14", bg='white', fg='black', borderwidth=0, insertbackground='black', justify='center')
-
 resize_canv_lbl = Label(text="Масштабирование канваса", bg='lightgrey', font="AvantGardeC 14", fg='black')
 
-x1_entry.insert(END, 0)
-y1_entry.insert(END, 0)
-x2_entry.insert(END, 250)
-y2_entry.insert(END, 250)
-color_combo.current(0)
-method_combo.current(0)
+
 
 
 # Список точек
@@ -855,8 +1028,7 @@ xy_current = [-400, -350, -300, -250, -200, -150, -100, -50,
 def choose_bg_color():
     global canvas_bg
     canvas_bg = colorchooser.askcolor()
-    print(canvas_bg)
-    canvas_win = Canvas(win, bg=cu.Color(canvas_bg[1]))
+    canvas_win.configure(bg=cu.Color(canvas_bg[1]))
 
 
 def choose_line_color():
@@ -869,16 +1041,14 @@ bld = Button(text="Построить отрезок", font="AvantGardeC 14",
              borderwidth=0, command=lambda: parse_line(method_combo.current()))
 sct = Button(text="Построить", font="AvantGardeC 14",
              borderwidth=0)
-lns = Button(text="Построить", font="AvantGardeC 14",
-             borderwidth=0)
 tim = Button(text="Сравнить\nвремя", font="AvantGardeC 10",
-             borderwidth=0)
+             borderwidth=0, command=lambda: time_go())
 grd = Button(text="Сравнить\nступенчатость", font="AvantGardeC 10",
-             borderwidth=0)
+             borderwidth=0, command=lambda: steps_go())
 con = Button(text="Условие задачи", font="AvantGardeC 14",
              borderwidth=0, command=lambda: messagebox.showinfo("Задание", TASK + AUTHOR))
 bgn = Button(text="Сброс", font="AvantGardeC 14",
-             borderwidth=0, command=lambda: clean())
+             borderwidth=0, command=lambda: clean_canvas())
 und = Button(text="↩", font="AvantGardeC 14",
              borderwidth=0, command=lambda: undo())
 pls = Button(text="+", font="AvantGardeC 14",
@@ -888,7 +1058,7 @@ mns = Button(text="-", font="AvantGardeC 14",
 sp1 = Button(text="по длине и углу", font="AvantGardeC 12",
              borderwidth=0, command=lambda: spectra_1_go())
 sp2 = Button(text="по отрезку и углу", font="AvantGardeC 12",
-             borderwidth=0, command=lambda: spectra_2_win())
+             borderwidth=0, command=lambda: spectra_2_go())
 clr = Button(text="Цвет отрезка", font="AvantGardeC 14",
              borderwidth=0, command=lambda: choose_line_color())
 bgc = Button(text="Цвет фона", font="AvantGardeC 14",
