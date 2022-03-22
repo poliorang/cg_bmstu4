@@ -36,14 +36,14 @@ def save_state():
 # (только при клике используется, если будет иначе, надо убрать * m_board)
 def to_coords(dot):
     x = (dot[0] - coord_center[0]) * m_board
-    y = (- dot[1] + coord_center[1]) * m_board
+    y = (-dot[1] + coord_center[1]) * m_board
 
     return [x, y]
 
 
 # координаты точки из фактических в канвасовские
 def to_canva(dot):
-    global m
+    print(dot)
     x = coord_center[0] + dot[0] / m_board
     y = coord_center[1] - dot[1] / m_board
 
@@ -101,10 +101,10 @@ def parse_methods(p1, p2, option, draw=True):
             draw_line(dots)
 
     elif option == 2:
-            dots = bresenham_smooth(p1, p2, color)
+        dots = bresenham_smooth(p1, p2, color)
 
-            if draw:
-                draw_line(dots)
+        if draw:
+            draw_line(dots)
 
     elif option == 3:
         dots = cda_method(p1, p2, color)
@@ -124,6 +124,56 @@ def parse_methods(p1, p2, option, draw=True):
     else:
         messagebox.showerror("Ошибка", "Неизвестный алгоритм")
 
+'''
+def bresenham_int(p1, p2, color, count_fl=False):
+    x0, y0 = p1[0], p1[1]
+    x1, y1 = p2[0], p2[1]
+    dx = x1 - x0
+    dy = y1 - y0
+
+    dots = []
+
+    if dx <= 0 and dy >= 0 and abs(dx) >= abs(dy) or dx <= 0 and dy <= 0 or dx >= 0 and dy <= 0 and abs(dy) > abs(dx):
+        x0, y0, x1, y1 = x1, y1, x0, y0
+
+    dx = abs(x1 - x0)
+    dy = abs(y1 - y0)
+    error = 0
+    deltaerr = (dy + 1)
+    deltaerr1 = (dx + 1)
+    y = y0
+    x = x0
+    diry = y1 - y0
+    if diry > 0:
+        diry = 1
+    if diry < 0:
+        diry = -1
+
+    dirx = x1 - x0
+    if dirx > 0:
+        dirx = 1
+    if dirx < 0:
+        dirx = -1
+
+    if dx >= dy:
+        for x in range(x0, x1):
+            dot = [x, y, color]
+            dots.append(dot)
+            error += deltaerr
+            if error >= dx + 1:
+                y += diry
+                error -= (dx + 1)
+    else:
+        for y in range(y0, y1):
+            dot = [x, y, color]
+            dots.append(dot)
+            error += deltaerr1
+            if error >= dy + 1:
+                x += dirx
+                error -= (dy + 1)
+
+    return dots
+'''
 
 def bresenham_int(p1, p2, color, step_count=False):
     x1, y1 = p1[0], p1[1]
@@ -160,7 +210,7 @@ def bresenham_int(p1, p2, color, step_count=False):
         x_buf = x
         y_buf = y
 
-        while e >= 0:
+        while e > 0:
             if swaped:
                 x = x + s1
             else:
@@ -327,7 +377,7 @@ def bresenham_smooth(p1, p2, color, step_count=False):
         return dots
 
 
-def cda_method(p1, p2, color, step_count = False):
+def cda_method(p1, p2, color, step_count=False):
     x1, y1 = p1[0], p1[1]
     x2, y2 = p2[0], p2[1]
 
@@ -469,9 +519,10 @@ def lib_method(p1, p2, color):
 def draw_line(dots):
     global xy_history, line_history
     for dot in dots:
-        tmp = to_canva(dot[0:2])
-        point = [tmp[0], tmp[1], dot[2]]
-        canvas_win.create_line(point[0], point[1], point[0] + 1, point[1], fill=point[2].hex, tag='line')
+        x, y = to_canva(dot[0:2])
+        point = [x, y, dot[2]]
+        canvas_win.create_polygon([x, y], [x, y + 1], [x + 1, y + 1], [x + 1, y], fill=point[2].hex, tag='line')
+        # canvas_win.create_line(point[0], point[1], point[0] + 1, point[1], fill=point[2].hex, tag='line')
     xy_history.append(xy_current)
     line_history.append(dots)
     canvas_win.delete('dot1', 'dot2')
@@ -479,17 +530,17 @@ def draw_line(dots):
 
 def draw_without_history(dots):
     for dot in dots:
-        tmp = to_canva(dot[0:2])
-        point = [tmp[0], tmp[1], dot[2]]
-        canvas_win.create_line(point[0], point[1], point[0] + 1, point[1], fill=point[2].hex, tag='line')
+        x, y = to_canva(dot[0:2])
+        point = [x, y, dot[2]]
+        canvas_win.create_polygon([x, y], [x, y + 1], [x + 1, y + 1], [x + 1, y], fill=point[2].hex, tag='line')
 
 
-def draw_all_lines(array_dots, history_param):
+def draw_all_lines(array_dots):
     for dots in array_dots:
-        if history_param:
+        if isinstance(dots[0][0], int):
             draw_without_history(dots)
         else:
-            draw_line(dots)
+            draw_all_lines(dots)
 
 
 def time_go():
@@ -566,7 +617,7 @@ def time_measure(width, angle, center_x, center_y):
 
 def steps_go():
     spectra_win, spectra_x, spectra_y, spectra_width = spectra_1_win(MINUS)
-    spectra_1_but = Button(spectra_win, text="Засечь время", font="AvantGardeC 14", borderwidth=0,
+    spectra_1_but = Button(spectra_win, text="Засечь ступенчатость", font="AvantGardeC 14", borderwidth=0,
                            command=lambda: steps_measure(spectra_width, spectra_x, spectra_y))
     spectra_1_but.place(x=35, y=206, width=170, height=26)
 
@@ -676,7 +727,7 @@ def spectra_1_win(angle_param):
     return param_win, center_x, center_y, width_spktr
 
 
-def build_spectra_1(width, angle, x, y):
+def build_spectra_1(width, angle, x, y, option):
     try:
         line_len = float(width.get())
         angle_spin = float(angle.get())
@@ -696,6 +747,7 @@ def build_spectra_1(width, angle, x, y):
 
     p1 = [center_x, center_y]
     spin = 0
+    points = []
 
     while spin <= 2 * pi:
         x2 = p1[0] + cos(spin) * line_len
@@ -703,14 +755,20 @@ def build_spectra_1(width, angle, x, y):
 
         p2 = [x2, y2]
 
-        parse_methods(p1, p2, option.get())
+        parse_methods(p1, p2, option)
         spin += radians(angle_spin)
 
+        # чтобы удалился весь пучок при undo, а не каждый луч по отдельности
+        point = line_history.pop()
+        points.append(point)
 
-def spectra_1_go():
+    line_history.append(points)
+
+
+def spectra_1_go(option):
     spectra_win, spectra_x, spectra_y, spectra_width, spectra_angle = spectra_1_win(PLUS)
     spectra_1_but = Button(spectra_win, text="Построить", font="AvantGardeC 14", borderwidth=0,
-                           command=lambda: build_spectra_1(spectra_width, spectra_angle, spectra_x, spectra_y))
+                           command=lambda: build_spectra_1(spectra_width, spectra_angle, spectra_x, spectra_y, option))
     spectra_1_but.place(x=35, y=206, width=170, height=26)
 
     spectra_win.mainloop()
@@ -765,7 +823,7 @@ def spectra_2_win():
     return sp_win, sp_x1, sp_y1, sp_x2, sp_y2, angle_sp
 
 
-def build_spectra_2(x_1, y_1, x_2, y_2, angle):
+def build_spectra_2(x_1, y_1, x_2, y_2, angle, option):
     try:
         x1 = int(x_1.get())
         y1 = int(y_1.get())
@@ -784,6 +842,7 @@ def build_spectra_2(x_1, y_1, x_2, y_2, angle):
 
     p1 = [x1, y1]
     spin = 0
+    points = []
 
     while spin <= 2 * pi:
         x2 = p1[0] + cos(spin) * line_len
@@ -791,14 +850,20 @@ def build_spectra_2(x_1, y_1, x_2, y_2, angle):
 
         p2 = [x2, y2]
 
-        parse_methods(p1, p2, option.get())
+        parse_methods(p1, p2, option)
         spin += radians(angle_spin)
 
+        # чтобы удалился весь пучок при undo, а не каждый луч по отдельности
+        point = line_history.pop()
+        points.append(point)
 
-def spectra_2_go():
+    line_history.append(points)
+
+
+def spectra_2_go(option):
     sp_win, sp_x1, sp_y1, sp_x2, sp_y2, angle_sp = spectra_2_win()
     spectra_2_but = Button(sp_win, text="Построить", font="AvantGardeC 14", borderwidth=0,
-                           command=lambda: build_spectra_2(sp_x1, sp_y1, sp_x2, sp_y2, angle_sp))
+                           command=lambda: build_spectra_2(sp_x1, sp_y1, sp_x2, sp_y2, angle_sp, option))
     spectra_2_but.place(x=35, y=206, width=170, height=26)
 
     sp_win.mainloop()
@@ -843,18 +908,20 @@ def click(event):
 def undo():
     global xy_current, xy_history, line_history
 
-    if len(line_history) == 0:
+    print(len(line_history), len(xy_history))
+
+    if len(line_history) == 0 or len(xy_history) == 0:
         messagebox.showerror("Внимание", "Достигнуто исходное состояние")
         return
 
     canvas_win.delete('line', 'coord')
+
     line_history.pop()
-    xy_history.pop()
+    draw_all_lines(line_history)
 
     xy_current = xy_history[-1]
-
-    draw_all_lines(line_history, MINUS)
     draw_axes()
+    xy_history.pop()
 
 
 # оси координат и сетка
@@ -897,47 +964,52 @@ def config(event):
 
         canvas_win.place(x=300 * win_x, y=0 * win_y, width=size, height=size)
 
-        # ключевая точка
-        center_lbl.place(x=33 * win_x, y=18 * win_y, width=235 * win_x, height=24 * win_y)
-        x1_lbl.place(x=33 * win_x, y=48 * win_y, width=110 * win_x, height=18 * win_y)
-        y1_lbl.place(x=158 * win_x, y=48 * win_y, width=110 * win_x, height=18 * win_y)
-        x1_entry.place(x=33 * win_x, y=67 * win_y, width=110 * win_x, height=20 * win_y)
-        y1_entry.place(x=158 * win_x, y=67 * win_y, width=110 * win_x, height=20 * win_y)
-        dot1.place(x=2 * win_x, y=58 * win_y)
+        # координаты
+        center_lbl.place(x=33 * win_x, y=28 * win_y, width=235 * win_x, height=24 * win_y)
+        x1_lbl.place(x=33 * win_x, y=58 * win_y, width=110 * win_x, height=18 * win_y)
+        y1_lbl.place(x=158 * win_x, y=58 * win_y, width=110 * win_x, height=18 * win_y)
+        x1_entry.place(x=33 * win_x, y=77 * win_y, width=110 * win_x, height=20 * win_y)
+        y1_entry.place(x=158 * win_x, y=77 * win_y, width=110 * win_x, height=20 * win_y)
+        dot1.place(x=2 * win_x, y=68 * win_y)
 
-        x2_lbl.place(x=33 * win_x, y=93 * win_y, width=110 * win_x, height=18 * win_y)
-        y2_lbl.place(x=158 * win_x, y=93 * win_y, width=110 * win_x, height=18 * win_y)
-        x2_entry.place(x=33 * win_x, y=112 * win_y, width=110 * win_x, height=20 * win_y)
-        y2_entry.place(x=158 * win_x, y=112 * win_y, width=110 * win_x, height=20 * win_y)
-        dot2.place(x=2 * win_x, y=103 * win_y)
+        x2_lbl.place(x=33 * win_x, y=103 * win_y, width=110 * win_x, height=18 * win_y)
+        y2_lbl.place(x=158 * win_x, y=103 * win_y, width=110 * win_x, height=18 * win_y)
+        x2_entry.place(x=33 * win_x, y=122 * win_y, width=110 * win_x, height=20 * win_y)
+        y2_entry.place(x=158 * win_x, y=122 * win_y, width=110 * win_x, height=20 * win_y)
+        dot2.place(x=2 * win_x, y=113 * win_y)
 
-        bld.place(x=33 * win_x, y=290 * win_y, width=235 * win_x, height=26 * win_y)
+        # выбор метода
+        method_lbl.place(x=33 * win_x, y=210 * win_y, width=235 * win_x, height=23 * win_y)
+        method_combo.place(x=33 * win_x, y=236 * win_y, width=235 * win_x, height=25 * win_y)
 
-        clr.place(x=33 * win_x, y=147 * win_y, width=235 * win_x, height=26 * win_y)
+        # цвет фона и отрезка
+        clr.place(x=33 * win_x, y=273 * win_y, width=235 * win_x, height=21 * win_y)
+        bgc.place(x=33 * win_x, y=298 * win_y, width=235 * win_x, height=21 * win_y)
 
-        method_lbl.place(x=33 * win_x, y=200 * win_y, width=235 * win_x, height=20 * win_y)
-        method_combo.place(x=33 * win_x, y=222 * win_y, width=235 * win_x, height=24 * win_y)
+        # построить
+        bld.place(x=33 * win_x, y=336 * win_y, width=235 * win_x, height=25 * win_y)
 
-        bgc.place(x=33 * win_x, y=250 * win_y, width=235 * win_x, height=26 * win_y)
+        # построить пучки
+        spectra_lbl.place(x=33 * win_x, y=440 * win_y, width=235 * win_x, height=24 * win_y)
+        sp1.place(x=33 * win_x, y=467 * win_y, width=110 * win_x, height=32 * win_y)
+        sp2.place(x=158 * win_x, y=467 * win_y, width=110 * win_x, height=32 * win_y)
 
-        spectra_lbl.place(x=33 * win_x, y=348 * win_y, width=235 * win_x, height=20 * win_y)
-        sp1.place(x=33 * win_x, y=371 * win_y, width=110 * win_x, height=25 * win_y)
-        sp2.place(x=158 * win_x, y=371 * win_y, width=110 * win_x, height=25 * win_y)
+        # сравнения
+        measure_lbl.place(x=30 * win_x, y=520 * win_y, width=235 * win_x, height=24 * win_y)
+        tim.place(x=30 * win_x, y=547 * win_y, width=110 * win_x, height=32 * win_y)
+        grd.place(x=156 * win_x, y=547 * win_y, width=110 * win_x, height=32 * win_y)
 
         # условие
         con.place(x=30 * win_x, y=650 * win_y, width=235 * win_x, height=28 * win_y)
-        # сравнения
-        tim.place(x=30 * win_x, y=680 * win_y, width=109 * win_x, height=28 * win_y)
-        grd.place(x=157 * win_x, y=680 * win_y, width=109 * win_x, height=28 * win_y)
         # откат
-        und.place(x=30 * win_x, y=710 * win_y, width=109 * win_x, height=28 * win_y)
+        und.place(x=30 * win_x, y=680 * win_y, width=109 * win_x, height=28 * win_y)
         # к начальным условиям
-        bgn.place(x=157 * win_x, y=710 * win_y, width=109 * win_x, height=28 * win_y)
+        bgn.place(x=157 * win_x, y=680 * win_y, width=109 * win_x, height=28 * win_y)
 
         # изменение размера
-        resize_canv_lbl.place(x=30 * win_x, y=590 * win_y, width=235 * win_x, height=24 * win_y)
-        pls.place(x=30 * win_x, y=617 * win_y, width=109 * win_x, height=26 * win_y)
-        mns.place(x=157 * win_x, y=617 * win_y, width=109 * win_x, height=26 * win_y)
+        # resize_canv_lbl.place(x=30 * win_x, y=590 * win_y, width=235 * win_x, height=24 * win_y)
+        # pls.place(x=30 * win_x, y=617 * win_y, width=109 * win_x, height=26 * win_y)
+        # mns.place(x=157 * win_x, y=617 * win_y, width=109 * win_x, height=26 * win_y)
 
         coord_center = [size / 2, size / 2]
 
@@ -962,12 +1034,12 @@ def change_size(plus_or_minus):
     xy_history.append(xy_current)
     # line_history.append(line_history[-1])
     draw_axes()
-    draw_all_lines(line_history, PLUS)
+    draw_all_lines(line_history)
 
 
 #  отчистака канваса
 def clean_canvas():
-    line_history.clear()
+    line_history.append([])
     canvas_win.delete('line', 'dot1', 'dot2')
 
 
@@ -1009,22 +1081,22 @@ y2_entry.insert(END, 250)
 dot2 = Radiobutton(variable=option, value=2, bg="grey", activebackground="grey", highlightbackground="grey")
 
 method_lbl = Label(text="Алгоритм", bg='pink', font="AvantGardeC 14", fg='black')
-method_combo = ttk.Combobox(win, values=["Брезенхем (целые)", "Брезенхем (вещ)", "Брезенхем (устран. ступ.)",
-                                         "ЦДА", "Ву", "Библиотечный"])
+method_combo = ttk.Combobox(win, state='readonly', values=["Брезенхем (целые)", "Брезенхем (вещ)",
+                            "Брезенхем (устран. ступ.)", "ЦДА", "Ву", "Библиотечный"])
 method_combo.current(0)
 
 spectra_lbl = Label(text="Построить пучок", bg='pink', font="AvantGardeC 14", fg='black')
 
-resize_canv_lbl = Label(text="Масштабирование канваса", bg='lightgrey', font="AvantGardeC 14", fg='black')
+measure_lbl = Label(text="Сравнить", bg='pink', font="AvantGardeC 14", fg='black')
+# resize_canv_lbl = Label(text="Масштабирование канваса", bg='lightgrey', font="AvantGardeC 14", fg='black')
 
 
 # Список точек
-line_history = [[]]  # история координат отрезков
+line_history = []  # история координат отрезков
 
 xy_current = [-400, -350, -300, -250, -200, -150, -100, -50,
-            0, 50, 100, 150, 200, 250, 300, 350, 400]
-xy_history = []  # история координат на оси
-xy_history.append(xy_current)
+              0, 50, 100, 150, 200, 250, 300, 350, 400]
+xy_history = [xy_current]  # история координат на оси
 
 
 # изменение цвета фона
@@ -1045,9 +1117,9 @@ bld = Button(text="Построить отрезок", font="AvantGardeC 14",
              borderwidth=0, command=lambda: parse_line(method_combo.current()))
 sct = Button(text="Построить", font="AvantGardeC 14",
              borderwidth=0)
-tim = Button(text="Сравнить\nвремя", font="AvantGardeC 10",
+tim = Button(text="Время", font="AvantGardeC 12",
              borderwidth=0, command=lambda: time_go())
-grd = Button(text="Сравнить\nступенчатость", font="AvantGardeC 10",
+grd = Button(text="Ступенчатость", font="AvantGardeC 12",
              borderwidth=0, command=lambda: steps_go())
 con = Button(text="Условие задачи", font="AvantGardeC 14",
              borderwidth=0, command=lambda: messagebox.showinfo("Задание", TASK + AUTHOR))
@@ -1060,9 +1132,9 @@ pls = Button(text="+", font="AvantGardeC 14",
 mns = Button(text="-", font="AvantGardeC 14",
              borderwidth=0, command=lambda: change_size(MINUS))
 sp1 = Button(text="по длине и углу", font="AvantGardeC 12",
-             borderwidth=0, command=lambda: spectra_1_go())
+             borderwidth=0, command=lambda: spectra_1_go(method_combo.current()))
 sp2 = Button(text="по отрезку и углу", font="AvantGardeC 12",
-             borderwidth=0, command=lambda: spectra_2_go())
+             borderwidth=0, command=lambda: spectra_2_go(method_combo.current()))
 clr = Button(text="Цвет отрезка", font="AvantGardeC 14",
              borderwidth=0, command=lambda: choose_line_color())
 bgc = Button(text="Цвет фона", font="AvantGardeC 14",
@@ -1077,7 +1149,7 @@ m = size * win_k / border  # коэффициент масштабировани
 coord_center = [400, 400]  # центр координат (в координатах канваса)
 
 k_board = 4
-m_board = 1 # коэффициент масштабирования при изменении масштаба канваса
+m_board = 1  # коэффициент масштабирования при изменении масштаба канваса
 
 current_color = (0, 0, 0)
 
