@@ -43,7 +43,6 @@ def to_coords(dot):
 
 # координаты точки из фактических в канвасовские
 def to_canva(dot):
-    print(dot)
     x = coord_center[0] + dot[0] / m_board
     y = coord_center[1] - dot[1] / m_board
 
@@ -73,7 +72,6 @@ def parse_line(option):
         y1 = int(y1_entry.get())
         x2 = int(x2_entry.get())
         y2 = int(y2_entry.get())
-        print(x1)
     except ValueError:
         messagebox.showerror("Ошибка", "Неверно введены координаты")
         return
@@ -387,10 +385,9 @@ def cda_method(p1, p2, color, step_count=False):
     dx = x2 - x1
     dy = y2 - y1
 
+    l = abs(dy)
     if abs(dx) >= abs(dy):
         l = abs(dx)
-    else:
-        l = abs(dy)
 
     dx /= l
     dy /= l
@@ -401,11 +398,9 @@ def cda_method(p1, p2, color, step_count=False):
     dots = [[round(x), round(y), color]]
 
     i = 1
-
     steps = 0
 
     while i < l:
-
         x += dx
         y += dy
 
@@ -414,10 +409,8 @@ def cda_method(p1, p2, color, step_count=False):
         dots.append(dot)
 
         if step_count:
-            if not((round(x + dx) == round(x) and
-                        round(y + dy) != round(y)) or
-                        (round(x + dx) != round(x) and
-                        round(y + dy) == round(y))):
+            if not((round(x + dx) == round(x) and round(y + dy) != round(y)) or
+                   (round(x + dx) != round(x) and round(y + dy) == round(y))):
                 steps += 1
 
         i += 1
@@ -429,10 +422,8 @@ def cda_method(p1, p2, color, step_count=False):
 
 
 def wu(p1, p2, color, step_count=False):
-    x1 = p1[0]
-    y1 = p1[1]
-    x2 = p2[0]
-    y2 = p2[1]
+    x1, y1 = p1[0], p1[1]
+    x2, y2 = p2[0], p2[1]
 
     if (x2 - x1 == 0) and (y2 - y1 == 0):
         return [[x1, y1, color]]
@@ -445,7 +436,6 @@ def wu(p1, p2, color, step_count=False):
     intens = 255
 
     dots = []
-
     steps = 0
 
     if fabs(dy) > fabs(dx):
@@ -463,9 +453,11 @@ def wu(p1, p2, color, step_count=False):
             d1 = x1 - floor(x1)
             d2 = 1 - d1
 
-            dot1 = [int(x1) + 1, y_cur, choose_color(color, round(fabs(d2) * intens))]
+            if not d1 or not d2:
+                d1 = d2 = 0.5
 
-            dot2 = [int(x1), y_cur, choose_color(color, round(fabs(d1) * intens))]
+            dot1 = [int(x1) + 1, y_cur, choose_color(color, (fabs(d2) * intens))]
+            dot2 = [int(x1), y_cur, choose_color(color, (fabs(d1) * intens))]
 
             if step_count and y_cur < y2:
                 if int(x1) != int(x1 + m):
@@ -481,19 +473,25 @@ def wu(p1, p2, color, step_count=False):
             m = dy / dx
 
         m1 = m
+        x_end = 0
 
         if x1 > x2:
             step *= -1
             m1 *= -1
+            if dy == dx:
+                x_end -= 5
 
-        x_end = round(x2) - 1 if (dy > dx) else (round(x2) + 1)
+        x_end += round(x2) - 1 if (dy > dx) else (round(x2) + 1)
 
         for x_cur in range(round(x1), x_end, step):
             d1 = y1 - floor(y1)
             d2 = 1 - d1
 
-            dot1 = [x_cur, int(y1) + 1, choose_color(color, round(fabs(d2) * intens))]
-            dot2 = [x_cur, int(y1), choose_color(color, round(fabs(d1) * intens))]
+            if not d1 or not d2:
+                d1 = d2 = 0.5
+
+            dot1 = [x_cur, int(y1) + 1, choose_color(color, (fabs(d2) * intens))]
+            dot2 = [x_cur, int(y1), choose_color(color, (fabs(d1) * intens))]
 
             if step_count and x_cur < x2:
                 if int(y1) != int(y1 + m):
@@ -747,16 +745,26 @@ def build_spectra_1(width, angle, x, y, option):
 
     p1 = [center_x, center_y]
     spin = 0
+    spin_deg = 0
     points = []
 
-    while spin <= 2 * pi:
-        x2 = p1[0] + cos(spin) * line_len
-        y2 = p1[1] + sin(spin) * line_len
+    while spin_deg < 360:
+
+        x2 = p1[0] + cos(pi * (spin_deg) / 180) * line_len
+        y2 = p1[1] + sin(pi * (spin_deg) / 180) * line_len
 
         p2 = [x2, y2]
 
+
+        if spin_deg == 45:
+            pass
+            # print(cos(radians(spin_deg)), sin(radians(45)))
+
+        spin_deg += angle_spin
         parse_methods(p1, p2, option)
-        spin += radians(angle_spin)
+        spin += angle_spin
+
+
 
         # чтобы удалился весь пучок при undo, а не каждый луч по отдельности
         point = line_history.pop()
@@ -908,7 +916,7 @@ def click(event):
 def undo():
     global xy_current, xy_history, line_history
 
-    print(len(line_history), len(xy_history))
+    # print(len(line_history), len(xy_history))
 
     if len(line_history) == 0 or len(xy_history) == 0:
         messagebox.showerror("Внимание", "Достигнуто исходное состояние")
@@ -991,8 +999,8 @@ def config(event):
 
         # построить пучки
         spectra_lbl.place(x=33 * win_x, y=440 * win_y, width=235 * win_x, height=24 * win_y)
-        sp1.place(x=33 * win_x, y=467 * win_y, width=110 * win_x, height=32 * win_y)
-        sp2.place(x=158 * win_x, y=467 * win_y, width=110 * win_x, height=32 * win_y)
+        sp1.place(x=33 * win_x, y=467 * win_y, width=235 * win_x, height=32 * win_y)
+        # sp2.place(x=158 * win_x, y=467 * win_y, width=110 * win_x, height=32 * win_y)
 
         # сравнения
         measure_lbl.place(x=30 * win_x, y=520 * win_y, width=235 * win_x, height=24 * win_y)
@@ -1041,6 +1049,7 @@ def change_size(plus_or_minus):
 def clean_canvas():
     line_history.append([])
     canvas_win.delete('line', 'dot1', 'dot2')
+    draw_axes()
 
 
 # Окно tkinter
