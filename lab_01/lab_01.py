@@ -60,6 +60,7 @@ def dots_win():
                   borderwidth=0, insertbackground='black')
     dot_y.place(x=130, y=70, relheight=0.15, relwidth=0.3)
 
+
     return dot_win, dot_x, dot_y
 
 

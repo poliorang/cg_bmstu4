@@ -1,7 +1,7 @@
 import copy
 from tkinter import messagebox
 from tkinter import *
-from math import degrees, radians, cos, sin
+from math import radians, cos, sin
 
 WIN_WIDTH = 1200
 WIN_HEIGHT = 800
@@ -89,7 +89,7 @@ def sft_go():
         save_state()
         shift_car([shx, shy])
     except ValueError:
-        messagebox.showerror('Ошибка', "Некорректный ввод или пустой ввод")
+        messagebox.showerror('Ошибка', "Не введены или некорректны значения смещения")
 
 
 # поворот точки
@@ -145,7 +145,7 @@ def save_state():
     main_history.append(main_point)
 
 
-# изменение размера для точки
+# масштабирование для точки
 def resize(a, k, center):
     a = coord_dif(a, center)
     res = (a[0] * k[0], a[1] * k[1])
@@ -153,7 +153,7 @@ def resize(a, k, center):
     return res
 
 
-# изменение размера для рисунка
+# масштабирование для рисунка
 def resize_car(k, center):
     global car
     for i in range(len(car.points) - 1):
@@ -183,16 +183,6 @@ def rsz_go():
         resize_car([rx, ry], [main_point[0] / m_board, main_point[1] / m_board])
     except ValueError:
         messagebox.showerror('Ошибка', "Некорректные координаты ключевой точки")
-
-
-# def check_abroad():
-#     global edge, k_board, main_point, m_board
-#     for point in car.points:
-#         if point[0] < -edge or point[1] < -edge or point[0] > edge or point[1] > edge:
-#             if len(main_point) == 0:
-#                 main_point = [0, 0, 0, 0]
-#             # print('main ', main_point)
-#             change_size(PLUS)
 
 
 # прорисовка ключевой точки
@@ -301,8 +291,6 @@ def draw_axes():
     for i in range(0, s, s // 16):
         canvas_win.create_line(i, s / 2 - 5, i, s / 2 + 5, fill='pink', width=2)
         canvas_win.create_line(i, 0, i, s, fill='grey', width=1, dash=(1, 9))
-        # canvas_win.create_text(i, s // 2 + 20, text=f'{"%.2f" % float((i - SIZE // 2) // k_board)}' if i - SIZE // 2 else '',
-        #                        fill='grey', tag='coord', font="AvantGardeC 10")
         canvas_win.create_text(i, s // 2 + 20, text=f'{"%.2f" % xy_current[j]}' if i - SIZE // 2 else '',
                                fill='grey', tag='coord', font="AvantGardeC 10")
 
