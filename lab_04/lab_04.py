@@ -21,7 +21,7 @@ MINUS = 0
 
 TASK = "Алгоритмы построения окружностей.\n\n" \
        "Реализовать возможность построения " \
-       "окружностей методами Брезенхема, средней точки" \
+       "окружностей методами Брезенхема, средней точки, " \
        "канонического и параметрического уравнений и " \
        "сравненить времени и ступенчатости."
 
@@ -196,89 +196,6 @@ def undo():
     xy_history.pop()
 
 
-
-# растягивание окна
-def config(event):
-    if event.widget == win:
-        global win_x, win_y, win_k, m, size
-
-        win_x = win.winfo_width()/WIN_WIDTH
-        win_y = (win.winfo_height() + 35)/WIN_HEIGHT
-        win_k = min(win_x, win_y)
-
-        size = SIZE * win_k
-        m = size / (2 * border + ten_percent)
-
-        canvas_win.place(x=300 * win_x, y=0 * win_y, width=size, height=size)
-
-        # координаты
-        center_lbl.place(x=33 * win_x, y=28 * win_y, width=235 * win_x, height=24 * win_y)
-        xc_lbl.place(x=33 * win_x, y=58 * win_y, width=110 * win_x, height=18 * win_y)
-        yc_lbl.place(x=158 * win_x, y=58 * win_y, width=110 * win_x, height=18 * win_y)
-        xc_entry.place(x=33 * win_x, y=77 * win_y, width=110 * win_x, height=20 * win_y)
-        yc_entry.place(x=158 * win_x, y=77 * win_y, width=110 * win_x, height=20 * win_y)
-
-        # выбор метода
-        method_lbl.place(x=33 * win_x, y=113 * win_y, width=235 * win_x, height=23 * win_y)
-        method_combo.place(x=33 * win_x, y=139 * win_y, width=235 * win_x, height=25 * win_y)
-
-        # выбор фигуры
-        circle.place(x=33 * win_x, y=180 * win_y, width=110 * win_x, height=23 * win_y)
-        ellipse.place(x=170 * win_x, y=180 * win_y, width=110 * win_x, height=23 * win_y)
-
-        # ввод радиуса
-        radius_lbl.place(x=33 * win_x, y=215 * win_y, width=235 * win_x, height=24 * win_y)
-        rx_lbl.place(x=33 * win_x, y=245 * win_y, width=110 * win_x, height=18 * win_y)
-        ry_lbl.place(x=158 * win_x, y=245 * win_y, width=110 * win_x, height=18 * win_y)
-        rx_entry.place(x=33 * win_x, y=264 * win_y, width=110 * win_x, height=20 * win_y)
-        ry_entry.place(x=158 * win_x, y=264 * win_y, width=110 * win_x, height=20 * win_y)
-
-        # построить
-        bld.place(x=33 * win_x, y=300 * win_y, width=235 * win_x, height=25 * win_y)
-
-        # построить пучок
-        spectra_lbl.place(x=33 * win_x, y=345 * win_y, width=235 * win_x, height=24 * win_y)
-        count_lbl.place(x=33 * win_x, y=375 * win_y, width=110 * win_x, height=18 * win_y)
-        count_entry.place(x=158 * win_x, y=375 * win_y, width=110 * win_x, height=20 * win_y)
-
-        start_radius_lbl.place(x=33 * win_x, y=400 * win_y, width=235 * win_x, height=18 * win_y)
-        start_radius_x_entry.place(x=33 * win_x, y=420 * win_y, width=110 * win_x, height=20 * win_y)
-        start_radius_y_entry.place(x=158 * win_x, y=420 * win_y, width=110 * win_x, height=20 * win_y)
-
-        end_radius_lbl.place(x=33 * win_x, y=445 * win_y, width=235 * win_x, height=18 * win_y)
-        end_radius_x_entry.place(x=33 * win_x, y=465 * win_y, width=235 * win_x, height=20 * win_y)
-        end_radio.place(x=8 * win_x, y=447 * win_y)
-
-        step_lbl.place(x=33 * win_x, y=490 * win_y, width=110 * win_x, height=18 * win_y)
-        step_entry.place(x=158 * win_x, y=490 * win_y, width=110 * win_x, height=20 * win_y)
-        step_radio.place(x=8 * win_x, y=487 * win_y)
-
-        spc.place(x=33 * win_x, y=525 * win_y, width=235 * win_x, height=25 * win_y)
-
-        # сравнения
-        measure_lbl.place(x=30 * win_x, y=560 * win_y, width=235 * win_x, height=24 * win_y)
-        tim.place(x=30 * win_x, y=587 * win_y, width=110 * win_x, height=24 * win_y)
-        grd.place(x=156 * win_x, y=587 * win_y, width=110 * win_x, height=24 * win_y)
-
-        # цвет фона и отрезка
-        clr.place(x=33 * win_x, y=630 * win_y, width=110 * win_x, height=21 * win_y)
-        bgc.place(x=156 * win_x, y=630 * win_y, width=110 * win_x, height=21 * win_y)
-
-        # условие
-        con.place(x=30 * win_x, y=660 * win_y, width=235 * win_x, height=28 * win_y)
-        # откат
-        und.place(x=30 * win_x, y=690 * win_y, width=109 * win_x, height=28 * win_y)
-        # к начальным условиям
-        bgn.place(x=157 * win_x, y=690 * win_y, width=109 * win_x, height=28 * win_y)
-
-        # coord_center = [size / 2, size / 2]
-
-        block_criteria(option, option_spectra)
-        block_second_radius(option_spectra)
-        canvas_win.delete('all')
-        draw_axes(canvas_win, xy_current, size)
-
-
 # изменение цвета фона
 def change_bg_color():
     global canvas_bg
@@ -338,6 +255,87 @@ def block_criteria(opt_spectra, opt_figure):
     if opt_spectra == 0:  # спектр по шагу
         step_entry.configure(state = NORMAL)
         end_radius_x_entry.configure(state='readonly')
+
+
+# растягивание окна
+def config(event):
+    if event.widget == win:
+        global win_x, win_y, win_k, m, size
+
+        win_x = win.winfo_width()/WIN_WIDTH
+        win_y = (win.winfo_height() + 35)/WIN_HEIGHT
+        win_k = min(win_x, win_y)
+
+        size = SIZE * win_k
+        m = size / (2 * border + ten_percent)
+
+        canvas_win.place(x=300 * win_x, y=0 * win_y, width=size, height=size)
+
+        # координаты
+        center_lbl.place(x=33 * win_x, y=28 * win_y, width=235 * win_x, height=24 * win_y)
+        xc_lbl.place(x=33 * win_x, y=58 * win_y, width=110 * win_x, height=18 * win_y)
+        yc_lbl.place(x=158 * win_x, y=58 * win_y, width=110 * win_x, height=18 * win_y)
+        xc_entry.place(x=33 * win_x, y=77 * win_y, width=110 * win_x, height=20 * win_y)
+        yc_entry.place(x=158 * win_x, y=77 * win_y, width=110 * win_x, height=20 * win_y)
+
+        # выбор метода
+        method_lbl.place(x=33 * win_x, y=113 * win_y, width=235 * win_x, height=23 * win_y)
+        method_combo.place(x=33 * win_x, y=139 * win_y, width=235 * win_x, height=25 * win_y)
+
+        # выбор фигуры
+        circle.place(x=33 * win_x, y=174 * win_y, width=110 * win_x, height=23 * win_y)
+        ellipse.place(x=170 * win_x, y=174 * win_y, width=110 * win_x, height=23 * win_y)
+
+        # ввод радиуса
+        radius_lbl.place(x=33 * win_x, y=210 * win_y, width=235 * win_x, height=24 * win_y)
+        rx_lbl.place(x=33 * win_x, y=240 * win_y, width=110 * win_x, height=18 * win_y)
+        ry_lbl.place(x=158 * win_x, y=240 * win_y, width=110 * win_x, height=18 * win_y)
+        rx_entry.place(x=33 * win_x, y=259 * win_y, width=110 * win_x, height=20 * win_y)
+        ry_entry.place(x=158 * win_x, y=259 * win_y, width=110 * win_x, height=20 * win_y)
+
+        # построить
+        bld.place(x=33 * win_x, y=290 * win_y, width=235 * win_x, height=25 * win_y)
+
+        # построить пучок
+        spectra_lbl.place(x=33 * win_x, y=345 * win_y, width=235 * win_x, height=24 * win_y)
+        count_lbl.place(x=33 * win_x, y=375 * win_y, width=110 * win_x, height=18 * win_y)
+        count_entry.place(x=158 * win_x, y=375 * win_y, width=110 * win_x, height=20 * win_y)
+
+        start_radius_lbl.place(x=33 * win_x, y=400 * win_y, width=235 * win_x, height=18 * win_y)
+        start_radius_x_entry.place(x=33 * win_x, y=420 * win_y, width=110 * win_x, height=20 * win_y)
+        start_radius_y_entry.place(x=158 * win_x, y=420 * win_y, width=110 * win_x, height=20 * win_y)
+
+        end_radius_lbl.place(x=41 * win_x, y=445 * win_y, width=100 * win_x, height=18 * win_y)
+        end_radius_x_entry.place(x=41 * win_x, y=465 * win_y, width=100 * win_x, height=20 * win_y)
+        end_radio.place(x=8 * win_x, y=448 * win_y)
+
+        step_lbl.place(x=168 * win_x, y=445 * win_y, width=100 * win_x, height=18 * win_y)
+        step_entry.place(x=168 * win_x, y=465 * win_y, width=100 * win_x, height=20 * win_y)
+        step_radio.place(x=145 * win_x, y=448 * win_y)
+
+        spc.place(x=33 * win_x, y=495 * win_y, width=235 * win_x, height=25 * win_y)
+
+        # сравнения
+        measure_lbl.place(x=33 * win_x, y=555 * win_y, width=235 * win_x, height=24 * win_y)
+        tim.place(x=33 * win_x, y=582 * win_y, width=110 * win_x, height=25 * win_y)
+        grd.place(x=157 * win_x, y=582 * win_y, width=110 * win_x, height=25 * win_y)
+
+        # условие
+        con.place(x=33 * win_x, y=630 * win_y, width=235 * win_x, height=28 * win_y)
+        # цвет фона и отрезка
+        clr.place(x=33 * win_x, y=660 * win_y, width=110 * win_x, height=28 * win_y)
+        bgc.place(x=157 * win_x, y=660 * win_y, width=110 * win_x, height=28 * win_y)
+        # откат
+        und.place(x=33 * win_x, y=690 * win_y, width=109 * win_x, height=28 * win_y)
+        # к начальным условиям
+        bgn.place(x=157 * win_x, y=690 * win_y, width=109 * win_x, height=28 * win_y)
+
+        # coord_center = [size / 2, size / 2]
+
+        block_criteria(option, option_spectra)
+        block_second_radius(option_spectra)
+        canvas_win.delete('all')
+        draw_axes(canvas_win, xy_current, size)
 
 
 # Окно tkinter
