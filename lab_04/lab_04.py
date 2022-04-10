@@ -19,6 +19,11 @@ WIDTH = 100.0
 PLUS = 1
 MINUS = 0
 
+NUMBER_OF_RUNS = 20
+MAX_RADIUS = 10000
+STEP = 1000
+ITERATION = 4
+
 TASK = "Алгоритмы построения окружностей.\n\n" \
        "Реализовать возможность построения " \
        "окружностей методами Брезенхема, средней точки, " \
@@ -159,23 +164,62 @@ def click(event):
     draw_point(event.x, event.y, point, 1)
 
 
-# отрисовать отрезов без сохранения в историю
-def draw_without_history(dots):
-    for dot in dots:
-        x, y = to_canva(dot[0:2])
-        point = [x, y, dot[2]]
-        canvas_win.create_polygon([x, y], [x, y + 1],
-                                  [x + 1, y + 1], [x + 1, y],
-                                  fill=point[2].hex, tag='line')
+# замер времени
+def time_measure(option_figure):
+    time_mes = []
+    r_a = STEP
+    r_b = STEP
+    name = "эллипс"
 
+    if option_figure == 1:
+        r_a = STEP
+        r_b = r_a
+        name = "окружность"
 
-# отрисовка всех отрезков (для undo)
-def draw_all_lines(array_dots):
-    for dots in array_dots:
-        if isinstance(dots[0][0], int):
-            draw_without_history(dots)
-        else:
-            draw_all_lines(dots)
+    dot_c = [0, 0]
+
+    for i in range(0, 4):
+        time_start = [0] * (MAX_RADIUS // STEP)
+        time_end = [0] * (MAX_RADIUS // STEP)
+
+        for _ in range(NUMBER_OF_RUNS):
+            r_a = STEP
+            r_b = STEP
+
+            for iter in range(ITERATION):
+                for k in range(MAX_RADIUS // STEP):
+                    rad = [r_a, r_b]
+
+                    time_start[k] += time.time()
+
+                    parse_methods(dot_c, i, rad, option_figure, draw=False)
+
+                    time_end[k] += time.time()
+
+                    r_a += STEP
+                    r_b += STEP
+
+        size = len(time_start)
+        res_time = list((time_end[j] / ITERATION - time_start[j] / ITERATION) / NUMBER_OF_RUNS for j in range(size))
+        time_mes.append(res_time)
+
+    rad_arr = list(i for i in range(0, MAX_RADIUS, STEP))
+    plt.figure(figsize=(14, 6))
+
+    plt.title(f"Фигура: {name}\nКоличество итераций при сравнении: {ITERATION}")
+
+    plt.plot(rad_arr, time_mes[0], label="Каноническое\nуравнеие")
+    plt.plot(rad_arr, time_mes[1], label="Параметрическое\nуравнение")
+    plt.plot(rad_arr, time_mes[2], label="Брезенхем")
+    plt.plot(rad_arr, time_mes[3], label="Алгоритм\nсредней точки")
+
+    plt.xticks(np.arange(STEP, MAX_RADIUS, STEP))
+    plt.legend()
+
+    plt.ylabel("Время")
+    plt.xlabel("Величина радиуса")
+
+    plt.show()
 
 
 # откат
@@ -218,7 +262,7 @@ def change_option_click(event):
         option.set(1)
 
 
-#  отчистака канваса
+#  очистка канваса
 def clean_canvas():
     line_history.append([])
     canvas_win.delete('pixel', 'dot1', 'dot2', 'coord')
@@ -240,7 +284,6 @@ def block_second_radius(opt_figure):
     if opt_figure == 1:  # окружность
         ry_entry.configure(state = 'readonly')
         start_radius_y_entry.configure(state='readonly')
-
 
 
 # блок полей для построения спектра
@@ -316,12 +359,12 @@ def config(event):
         spc.place(x=33 * win_x, y=495 * win_y, width=235 * win_x, height=25 * win_y)
 
         # сравнения
-        measure_lbl.place(x=33 * win_x, y=555 * win_y, width=235 * win_x, height=24 * win_y)
-        tim.place(x=33 * win_x, y=582 * win_y, width=110 * win_x, height=25 * win_y)
-        grd.place(x=157 * win_x, y=582 * win_y, width=110 * win_x, height=25 * win_y)
+        # measure_lbl.place(x=33 * win_x, y=555 * win_y, width=235 * win_x, height=24 * win_y)
+        tim.place(x=33 * win_x, y=630 * win_y, width=235 * win_x, height=28 * win_y)
+        # grd.place(x=157 * win_x, y=582 * win_y, width=110 * win_x, height=25 * win_y)
 
         # условие
-        con.place(x=33 * win_x, y=630 * win_y, width=235 * win_x, height=28 * win_y)
+        con.place(x=33 * win_x, y=600 * win_y, width=235 * win_x, height=28 * win_y)
         # цвет фона и отрезка
         clr.place(x=33 * win_x, y=660 * win_y, width=110 * win_x, height=28 * win_y)
         bgc.place(x=157 * win_x, y=660 * win_y, width=110 * win_x, height=28 * win_y)
@@ -437,10 +480,10 @@ bld = Button(text="Построить фигуру", font="AvantGardeC 14",
              borderwidth=0, command=lambda: parse(method_combo.current(), option.get()))
 sct = Button(text="Построить", font="AvantGardeC 14",
              borderwidth=0)
-tim = Button(text="Время", font="AvantGardeC 12",
-             borderwidth=0, command=lambda: time_go())
-grd = Button(text="Ступенчатость", font="AvantGardeC 12",
-             borderwidth=0, command=lambda: steps_go())
+tim = Button(text="Сравнить время", font="AvantGardeC 14",
+             borderwidth=0, command=lambda: time_measure(option.get()))
+# grd = Button(text="Ступенчатость", font="AvantGardeC 12",
+#              borderwidth=0, command=lambda: steps_go())
 con = Button(text="Условие задачи", font="AvantGardeC 14",
              borderwidth=0, command=lambda: messagebox.showinfo("Задание", TASK + AUTHOR))
 bgn = Button(text="Сброс", font="AvantGardeC 14",

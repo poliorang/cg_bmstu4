@@ -1,10 +1,10 @@
 from tkinter import *
 
-# координаты точки из канвасовских в фактические
 coord_center = [400, 400]
 m_board = 1
 SIZE = 800
 CENTER = [400, 400]
+figure_history = []
 
 
 # оси координат и сетка
@@ -80,3 +80,21 @@ def draw_dots_ellipse(canvas_win, center, dot_dif, color):
     draw_pixel(canvas_win, [x_c - x, y_c + y, color])
     draw_pixel(canvas_win, [x_c + x, y_c - y, color])
     draw_pixel(canvas_win, [x_c - x, y_c - y, color])
+
+
+# откат
+def undo():
+    global figure_history
+
+    if len(figure_history) == 0:
+        messagebox.showerror("Внимание", "Достигнуто исходное состояние")
+        return
+
+    canvas_win.delete('pixel')
+
+    figure_history.pop()
+    draw_all_lines(figure_history)
+
+    # xy_current = xy_history[-1]
+    # draw_axes()
+    # xy_history.pop()
