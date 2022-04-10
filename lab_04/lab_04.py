@@ -10,7 +10,7 @@ from bresenham_method import bresenham_circle, bresenham_ellipse
 from mid_dot_method import mid_dot_circle, mid_dot_ellipse
 from canon_method import canon_circle, canon_ellipse
 from parametric_method import parametric_circle, parametric_ellipse
-from draw import to_canva, to_coords, draw_axes, SIZE
+from draw import to_canva, to_coords, draw_axes, SIZE, undo
 
 WIN_WIDTH = 1200
 WIN_HEIGHT = 800
@@ -49,36 +49,36 @@ def parse(option, option_figure):
     center = [center_x, center_y]
     radius = [rad_x, rad_y]
 
-    parse_methods(center, option, radius, option_figure)
+    parse_methods(center, option, radius, option_figure, figure_history)
 
 
-def parse_methods(center, opt, radius, figure, draw=True):
+def parse_methods(center, opt, radius, figure, history, draw=True):
     # print("Method = ", opt)
     color = cu.Color(current_color[0])
 
     if opt == 0:  # canon
         if figure == 0:
-            canon_ellipse(canvas_win, center, radius, color, draw)
+            canon_ellipse(canvas_win, center, radius, color, history, draw)
         elif figure == 1:
-            canon_circle(canvas_win, center, radius[0], color, draw)
+            canon_circle(canvas_win, center, radius[0], color, history, draw)
 
     elif opt == 1:  # param
         if figure == 1:
-            parametric_circle(canvas_win, center, radius[0], color, draw)
+            parametric_circle(canvas_win, center, radius[0], color, history, draw)
         elif figure == 0:
-            parametric_ellipse(canvas_win, center, radius, color, draw)
+            parametric_ellipse(canvas_win, center, radius, color, history, draw)
 
     elif opt == 2:  # bres
         if figure == 1:
-            bresenham_circle(canvas_win, center, radius[0], color, draw)
+            bresenham_circle(canvas_win, center, radius[0], color, history, draw)
         elif figure == 0:
-            bresenham_ellipse(canvas_win, center, radius, color, draw)
+            bresenham_ellipse(canvas_win, center, radius, color, history, draw)
 
     elif opt == 3:  # mid point
         if figure == 1:
-            mid_dot_circle(canvas_win, center, radius[0], color, draw)
+            mid_dot_circle(canvas_win, center, radius[0], color, history, draw)
         elif figure == 0:
-            mid_dot_ellipse(canvas_win, center, radius, color, draw)
+            mid_dot_ellipse(canvas_win, center, radius, color, history, draw)
 
     elif opt == 4:
         lib_method(dot_c, rad, color)
@@ -147,13 +147,16 @@ def parse_spectra(opt, option_spectra, option_figure):
     r_b = rad_y_start
     center = [center_x, center_y]
 
+
+    spectra_history = []
     for i in range(rad_count):
         rad = [r_a, r_b]
 
-        parse_methods(center, opt, rad, option_figure)
+        parse_methods(center, opt, rad, option_figure, spectra_history)
 
         r_a += rad_step
         r_b += rad_step
+    figure_history.append(spectra_history)
 
 
 # определение и запись координат точки по клику
@@ -186,13 +189,14 @@ def time_measure(option_figure):
             r_a = STEP
             r_b = STEP
 
+            nothing = []
             for iter in range(ITERATION):
                 for k in range(MAX_RADIUS // STEP):
                     rad = [r_a, r_b]
 
                     time_start[k] += time.time()
 
-                    parse_methods(dot_c, i, rad, option_figure, draw=False)
+                    parse_methods(dot_c, i, rad, option_figure, nothing, draw=False)
 
                     time_end[k] += time.time()
 
@@ -222,24 +226,6 @@ def time_measure(option_figure):
     plt.show()
 
 
-# откат
-def undo():
-    global xy_current, xy_history, line_history
-
-    if len(line_history) == 0 or len(xy_history) == 0:
-        messagebox.showerror("Внимание", "Достигнуто исходное состояние")
-        return
-
-    canvas_win.delete('line', 'coord')
-
-    line_history.pop()
-    draw_all_lines(line_history)
-
-    xy_current = xy_history[-1]
-    draw_axes(canvas_win, xy_current, size)
-    xy_history.pop()
-
-
 # изменение цвета фона
 def change_bg_color():
     global canvas_bg
@@ -264,17 +250,17 @@ def change_option_click(event):
 
 #  очистка канваса
 def clean_canvas():
-    line_history.append([])
-    canvas_win.delete('pixel', 'dot1', 'dot2', 'coord')
+    figure_history.append([])
+    canvas_win.delete('pixel', 'coord')
     draw_axes(canvas_win, xy_current, size)
 
 
 # если строим окружность, задать радиус по игреку будет невозможно
 def block_second_radius(opt_figure):
-    rx_entry.configure(state = NORMAL)
-    ry_entry.configure(state = NORMAL)
+    rx_entry.configure(state=NORMAL)
+    ry_entry.configure(state=NORMAL)
     start_radius_y_entry.configure(state=NORMAL)
-    end_radius_x_entry.configure(state = 'readonly')
+    end_radius_x_entry.configure(state='readonly')
 
     if opt_figure == 0:  # эллипс
         step_entry.configure(state=NORMAL)
@@ -282,7 +268,7 @@ def block_second_radius(opt_figure):
         start_radius_y_entry.configure(state=NORMAL)
         option_spectra.set(0)
     if opt_figure == 1:  # окружность
-        ry_entry.configure(state = 'readonly')
+        ry_entry.configure(state='readonly')
         start_radius_y_entry.configure(state='readonly')
 
 
@@ -468,11 +454,9 @@ end_radius_x_entry.insert(END, 300)
 measure_lbl = Label(text="Сравнить", bg='pink', font="AvantGardeC 14", fg='black')
 
 # Список точек
-line_history = []  # история координат отрезков
-
+figure_history = []
 xy_current = [-400, -350, -300, -250, -200, -150, -100, -50,
               0, 50, 100, 150, 200, 250, 300, 350, 400]
-xy_history = [xy_current]  # история координат на оси
 
 
 # Кнопки
@@ -489,7 +473,7 @@ con = Button(text="Условие задачи", font="AvantGardeC 14",
 bgn = Button(text="Сброс", font="AvantGardeC 14",
              borderwidth=0, command=lambda: clean_canvas())
 und = Button(text="↩", font="AvantGardeC 14",
-             borderwidth=0, command=lambda: undo())
+             borderwidth=0, command=lambda: undo(canvas_win, figure_history))
 spc = Button(text="Построить спектр", font="AvantGardeC 14",
              borderwidth=0, command=lambda: parse_spectra(method_combo.current(),
                                                                  option_spectra.get(), option.get()))
