@@ -3,9 +3,6 @@ from draw import draw_dots_circle, draw_dots_ellipse
 
 
 def parametric_circle(canvas_win, dot_c, radius, color, history, draw):
-    x_c = dot_c[0]
-    y_c = dot_c[1]
-
     step = 1 / radius
     alpha = 0
 
@@ -16,16 +13,13 @@ def parametric_circle(canvas_win, dot_c, radius, color, history, draw):
         y = round(radius * sin(alpha))
 
         if draw:
-            draw_dots_circle(canvas_win, [x_c, y_c], [x, y], color, step_history)
+            draw_dots_circle(canvas_win, dot_c, [x, y], color, step_history)
 
         alpha += step
     history.append(step_history)
 
 
 def parametric_ellipse(canvas_win, dot_c, rad, color, history, draw):
-    x_c = dot_c[0]
-    y_c = dot_c[1]
-
     if rad[0] > rad[1]:
         step = 1 / rad[0]
     else:
@@ -40,7 +34,7 @@ def parametric_ellipse(canvas_win, dot_c, rad, color, history, draw):
         y = round(rad[1] * sin(alpha))
 
         if draw:
-            draw_dots_ellipse(canvas_win, [x_c, y_c], [x, y], color, step_history)
+            draw_dots_ellipse(canvas_win, dot_c, [x, y], color, step_history)
 
         alpha += step
 

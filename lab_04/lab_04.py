@@ -28,7 +28,7 @@ TASK = "Алгоритмы построения окружностей.\n\n" \
        "Реализовать возможность построения " \
        "окружностей методами Брезенхема, средней точки, " \
        "канонического и параметрического уравнений и " \
-       "сравненить времени и ступенчатости."
+       "сравнить время работы."
 
 AUTHOR = "\n\nЕгорова Полина ИУ7-44Б"
 
@@ -50,6 +50,14 @@ def parse(option, option_figure):
     radius = [rad_x, rad_y]
 
     parse_methods(center, option, radius, option_figure, figure_history)
+
+
+def lib_method(center, rad, color):
+    c_x, c_y = to_canva((center[0], center[1]))
+    canvas_win.create_oval(c_x - rad[0], c_y - rad[1],
+                           c_x + rad[0], c_y + rad[1],
+                           outline=color.hex, tag='pixel')
+    # figure_history.append()
 
 
 def parse_methods(center, opt, radius, figure, history, draw=True):
@@ -81,7 +89,8 @@ def parse_methods(center, opt, radius, figure, history, draw=True):
             mid_dot_ellipse(canvas_win, center, radius, color, history, draw)
 
     elif opt == 4:
-        lib_method(dot_c, rad, color)
+        lib_method(center, radius, color)
+
     else:
         messagebox.showerror("Ошибка", "Неизвестный алгоритм")
 

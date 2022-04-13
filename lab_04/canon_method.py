@@ -1,11 +1,7 @@
 from math import sqrt
 from draw import draw_pixel, draw_dots_circle, draw_dots_ellipse
 
-
 def canon_circle(canva, center, radius, color, history, draw):
-    x_c = center[0]
-    y_c = center[1]
-
     edge = round(radius / sqrt(2))
     double_radius = radius * radius
     x = 0
@@ -16,16 +12,13 @@ def canon_circle(canva, center, radius, color, history, draw):
         y = round(sqrt(double_radius - x * x))
 
         if draw:
-            draw_dots_circle(canva, [x_c, y_c], [x, y], color, step_history)
+            draw_dots_circle(canva, center, [x, y], color, step_history)
 
         x += 1
     history.append(step_history)
 
 
 def canon_ellipse(canva, center, radius, color, history, draw):
-    x_c = center[0]
-    y_c = center[1]
-
     r_a = radius[0]
     r_b = radius[1]
 
@@ -41,7 +34,7 @@ def canon_ellipse(canva, center, radius, color, history, draw):
         y = round(sqrt(1 - x * x / double_ra) * r_b)
 
         if draw:
-            draw_dots_ellipse(canva, [x_c, y_c], [x, y], color, step_history)
+            draw_dots_ellipse(canva, center, [x, y], color, step_history)
 
         x += 1
 
@@ -52,7 +45,7 @@ def canon_ellipse(canva, center, radius, color, history, draw):
         x = round(sqrt(1 - y * y / double_rb) * r_a)
 
         if draw:   
-            draw_dots_ellipse(canva, [x_c, y_c], [x, y], color, step_history)
+            draw_dots_ellipse(canva, center, [x, y], color, step_history)
 
         y += 1
 

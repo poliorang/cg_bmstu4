@@ -2,7 +2,6 @@ from math import sqrt
 from draw import draw_dots_circle, draw_dots_ellipse
 
 def bresenham_circle(canvas_win, dot_c, radius, color, history, draw):
-
     x_c = round(dot_c[0])
     y_c = round(dot_c[1])
 
@@ -19,6 +18,7 @@ def bresenham_circle(canvas_win, dot_c, radius, color, history, draw):
         if draw:
             draw_dots_circle(canvas_win, [x_c, y_c], [x, y], color, step_history)
 
+        param = 1
         if delta_i <= 0:
             eps = 2 * delta_i + 2 * y - 1
 
@@ -26,7 +26,7 @@ def bresenham_circle(canvas_win, dot_c, radius, color, history, draw):
                 param = 1
             else:
                 param = 2
-        elif delta_i > 0:
+        elif delta_i > 0:  # никогдане будет для окружности
             eps = 2 * delta_i - 2 * x - 1
 
             if eps < 0:
@@ -41,7 +41,7 @@ def bresenham_circle(canvas_win, dot_c, radius, color, history, draw):
             x = x + 1
             y = y - 1
             delta_i = delta_i + 2 * x - 2 * y + 2
-        else:
+        else: # сюда тоже не попадем для окр
             y = y - 1
             delta_i = delta_i - 2 * y + 1
 
@@ -49,7 +49,6 @@ def bresenham_circle(canvas_win, dot_c, radius, color, history, draw):
 
 
 def bresenham_ellipse(canvas_win, dot_c, rad, color, history, draw):
-
     x_c = round(dot_c[0])
     y_c = round(dot_c[1])
 
@@ -61,16 +60,15 @@ def bresenham_ellipse(canvas_win, dot_c, rad, color, history, draw):
 
     delta_i = r_b_2 - r_a_2 * (2 * y + 1)
 
-
     eps = 0
 
     step_history = []
     step_history.clear()
     while y >= 0:
-
         if draw:
             draw_dots_ellipse(canvas_win, [x_c, y_c], [x, y], color, step_history)
 
+        param = 1
         if delta_i <= 0:
             eps = 2 * delta_i + (2 * y + 2) * r_a_2
 
