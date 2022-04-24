@@ -257,21 +257,25 @@ def parse_fill():
         messagebox.showerror("Ошибка", "Крайняя фигура не замкнута")
         return
 
+    print(len(dots_list))
     block_edges = get_edges(dots_list)
 
-    if (option_filling.get() == 1):
+    if option_filling.get() == 1:
         delay = True
     else:
         delay = False
 
-    color_fill = parse_color(option_color.get())
 
-    fill_with_sides_and_flag(sides_list, block_edges, color_fill, delay=delay)
+    fill_with_sides_and_flag(block_edges, delay=delay)
 
 
-def fill_with_sides_and_flag(sides_list, block_edges, color_fill, delay=False):
+def fill_with_sides_and_flag(block_edges, delay=False):
     round_figure()
     canvas_win.update()
+
+    color_fill = cu.Color(filling_color[1])
+    color_line = cu.Color(line_color[1])
+    color_background = cu.Color(canvas_bg[1])
 
     x_max = block_edges[2]
     x_min = block_edges[0]
@@ -293,12 +297,12 @@ def fill_with_sides_and_flag(sides_list, block_edges, color_fill, delay=False):
                 image_canvas.put(color_fill, (x, y))
                 canvas_win.create_polygon([x, y], [x, y + 1],
                                           [x + 1, y + 1], [x + 1, y],
-                                          fill='#ffa500', tag='line')
+                                          fill=color_fill, tag='line')
             else:
                 image_canvas.put(CV_COLOR, (x, y))
                 canvas_win.create_polygon([x, y], [x, y + 1],
                                           [x + 1, y + 1], [x + 1, y],
-                                          fill='#ffffff', tag='line')
+                                          fill=color_background, tag='line')
 
         if delay:
             canvas_win.delete('coord')
@@ -311,7 +315,7 @@ def fill_with_sides_and_flag(sides_list, block_edges, color_fill, delay=False):
     # Sides
     for fig in sides_list:
         for side in fig:
-            dots = bresenham_int(side[0], side[1], COLOR_LINE)
+            dots = bresenham_int(side[0], side[1], cu.Color(color_line))
             draw_without_history(dots)
 
     canvas_win.delete('coord')
@@ -326,9 +330,7 @@ def draw_line(dots):
     global xy_history, line_history
     for dot in dots:
         x, y = dot[0:2]
-        point = [x, y, dot[2]]
-
-        canvas_win.create_polygon([x, y], [x, y + 1], [x + 1, y + 1], [x + 1, y], fill=point[2].hex, tag='line')
+        canvas_win.create_polygon([x, y], [x, y + 1], [x + 1, y + 1], [x + 1, y], fill=dot[2], tag='line')
     xy_history.append(xy_current)
     line_history.append(dots)
     # canvas_win.delete('dot')
@@ -375,7 +377,7 @@ def draw_point(ev_x, ev_y, click_):
 
     if len(dots_list[cur_figure]) > 1:
         sides_list[cur_figure].append([dots_list[cur_figure][cur_dot - 1], dots_list[cur_figure][cur_dot]])
-        dots = bresenham_int(dots_list[cur_figure][cur_dot - 1], dots_list[cur_figure][cur_dot], cu.Color((0, 0, 0)))
+        dots = bresenham_int(dots_list[cur_figure][cur_dot - 1], dots_list[cur_figure][cur_dot], cu.Color(line_color[1]))
         draw_line(dots)
 
 
@@ -389,17 +391,16 @@ def click(event):
 # отрисовать отрезов без сохранения в историю
 def draw_without_history(dots):
     for dot in dots:
-        print(dot)
+        # print(dot)
         x, y = dot[0:2]
-        point = [x, y, dot[2]]
         canvas_win.create_polygon([x, y], [x, y + 1],
                                   [x + 1, y + 1], [x + 1, y],
-                                  fill='#ffa500', tag='line')
+                                  fill=dot[2], tag='line')
 
 
 # отрисовка всех отрезков (для undo)
 def draw_all_lines(array_dots):
-    print(array_dots)
+    # print(array_dots)
     for dots in array_dots:
         if isinstance(dots[0][0], int):
             draw_without_history(dots)
@@ -523,8 +524,8 @@ def choose_line_color():
 
 # изменение цвета заливки
 def choose_fill_color():
-    global fill_color
-    current_color = colorchooser.askcolor()
+    global filling_color
+    filling_color = colorchooser.askcolor()
 
 
 # при нажатии буквы q будет переключать радиобаттон (для быстрого задания концов отрезка)
@@ -539,8 +540,14 @@ def change_option_click(event):
 #  отчистака канваса
 def clean_canvas():
     line_history.append([])
+    dots_list.clear()
+    sides_list.clear()
+    print(dots_list)
+    dots_list.append([])
+    sides_list.append([])
     canvas_win.delete('line', 'dot')
     draw_axes()
+    # image_canvas = PhotoImage(width=CV_WIDE, height=CV_HEIGHT)
 
     dots_block.delete(0, END)
 
@@ -558,6 +565,9 @@ option.set(1)
 # Канвас
 canvas_bg = ((255, 255, 255), "#ffffff")
 canvas_win = Canvas(win, bg=cu.Color(canvas_bg[1]))
+
+filling_color = ((253, 189, 186), "#fdbdba")
+line_color = ((0, 0, 0), "#000000")
 
 image_canvas = PhotoImage(width = WIN_WIDTH, height = WIN_HEIGHT)
 
@@ -615,7 +625,7 @@ clr = Button(text="отрезка", font="AvantGardeC 14",
 bgc = Button(text="фона", font="AvantGardeC 14",
              borderwidth=0, command=lambda: change_bg_color())
 fil = Button(text="заливки", font="AvantGardeC 14",
-             borderwidth=0, command=lambda: choose_line_color())
+             borderwidth=0, command=lambda: choose_fill_color())
 add = Button(text="Добавить", font="AvantGardeC 14",
              borderwidth=0, command=lambda: manual_add_dot())
 
