@@ -1,23 +1,16 @@
 from tkinter import messagebox, ttk, colorchooser, PhotoImage
 from tkinter import *
-from math import radians, cos, sin, fabs, floor, pi, sqrt
 import colorutils as cu
 import matplotlib.pyplot as plt
-import numpy as np
 from time import time, sleep
 
 WIN_WIDTH = 1200
 WIN_HEIGHT = 800
 TEMP_SIDE_COLOR_CHECK = (255, 0, 255) # purple
 TEMP_SIDE_COLOR = "#ff00ff"
-CV_COLOR = "#ffffff"
-COLOR_LINE = "black" #(0, 0, 0) # black
 
 SIZE = 800
 WIDTH = 100.0
-
-PLUS = 1
-MINUS = 0
 
 TASK = "Алгоритмы растрового заполнения " \
        "сплошных областей.\n" \
@@ -52,6 +45,7 @@ def sign(diff):
         return 1
 
 
+# добаление точки по координатам (не через канвас)
 def manual_add_dot():
     try:
         x = int(x_entry.get())
@@ -63,6 +57,7 @@ def manual_add_dot():
     draw_point(x, y, 0)
 
 
+# метод брезенхема для построения отрезка
 def bresenham_int(p1, p2, color, step_count=False):
     x1, y1 = p1[0], p1[1]
     x2, y2 = p2[0], p2[1]
@@ -125,6 +120,7 @@ def bresenham_int(p1, p2, color, step_count=False):
         return dots
 
 
+# коэффициенты прямой
 def line_koefs(x1, y1, x2, y2):
     a = y1 - y2
     b = x2 - x1
@@ -133,6 +129,7 @@ def line_koefs(x1, y1, x2, y2):
     return a, b, c
 
 
+# точка пересечения прямых
 def solve_lines_intersection(a1, b1, c1, a2, b2, c2):
     opr = a1 * b2 - a2 * b1
     opr1 = (-c1) * b2 - b1 * (-c2)
@@ -144,8 +141,10 @@ def solve_lines_intersection(a1, b1, c1, a2, b2, c2):
     return x, y
 
 
+# очерчивание границ по ребрам
 def round_side(dot1, dot2):
     if dot1[1] == dot2[1]:
+        print(111)
         return
 
     a_side, b_side, c_side = line_koefs(dot1[0], dot1[1], dot2[0], dot2[1])
@@ -167,13 +166,15 @@ def round_side(dot1, dot2):
         x_intersec, y_intersec = solve_lines_intersection(a_side, b_side, c_side, a_scan_line, b_scan_line, c_scan_line)
 
         x_ = int(x_intersec)
-        if image_canvas.get(int(x_intersec) + 1, y) != TEMP_SIDE_COLOR_CHECK:
+        if image_canvas.get(x_ + 1, y) != TEMP_SIDE_COLOR_CHECK:
             x_ += 1
 
         else:
             x_ += 2
 
         image_canvas.put(TEMP_SIDE_COLOR, (x_, y))
+        print(int(x_intersec), x_)
+        ## раскоментить, чтобы была отрисовка контура (1 этап алгоритма) в рилтайме
         # canvas_win.create_polygon([x_, y], [x_, y + 1],
         #                           [x_ + 1, y + 1], [x_ + 1, y],
         #                           fill=TEMP_SIDE_COLOR, tag='line')
@@ -183,6 +184,7 @@ def round_side(dot1, dot2):
         canvas_win.update()
 
 
+# очерчивание границ по ребрам
 def round_figure():
     for figure in range(len(sides_list)):
         sides_num = len(sides_list[figure]) - 1
@@ -191,6 +193,7 @@ def round_figure():
             round_side(sides_list[figure][side][0], sides_list[figure][side][1])
 
 
+# определение границ исследуемой области
 def get_edges(dots):
     x_max = 0
     x_min = WIN_WIDTH
@@ -217,19 +220,19 @@ def get_edges(dots):
     return block_edges
 
 
+# закраска
 def parse_fill():
     cur_figure = len(dots_list) - 1
 
     if len(dots_list[cur_figure]) != 0:
-        messagebox.showerror("Ошибка", "Крайняя фигура не замкнута")
+        messagebox.showerror("Ошибка", "Фигура не замкнута")
         return
 
     block_edges = get_edges(dots_list)
 
+    delay = False
     if option_filling.get() == 1:
         delay = True
-    else:
-        delay = False
 
     fill_with_sides_and_flag(block_edges, delay=delay)
 
@@ -241,7 +244,6 @@ def fill_with_sides_and_flag(block_edges, delay=False):
     color_fill = cu.Color(filling_color[1])
     color_line = cu.Color(line_color[1])
     color_background = cu.Color(canvas_bg[1])
-    # print(canvas_bg)
 
     x_max = block_edges[2]
     x_min = block_edges[0]
@@ -255,8 +257,6 @@ def fill_with_sides_and_flag(block_edges, delay=False):
         flag = False
 
         for x in range(x_min, x_max + 2):
-
-            # if screen.itemcget(screen.find_overlapping(i+p,j+p,i+p,j+p)[-1], "fill" ) != 'black'
             if image_canvas.get(x, y) == TEMP_SIDE_COLOR_CHECK:
                 flag = not flag
 
@@ -292,6 +292,7 @@ def fill_with_sides_and_flag(block_edges, delay=False):
     new_win.mainloop()
 
 
+# окно для вывода замера времени
 def time_win(start_time, end_time):
     win = Tk()
     win.title("Время исполнения")
@@ -307,12 +308,13 @@ def time_win(start_time, end_time):
 
 # нарисовать линию
 def draw_line(dots):
-    global xy_history, line_history
+    global xy_history
     for dot in dots:
         x, y = dot[0:2]
         canvas_win.create_polygon([x, y], [x, y + 1], [x + 1, y + 1], [x + 1, y], fill=dot[2], tag='line')
 
 
+# замкнуть фигуру
 def make_figure():
     cur_figure = len(dots_list)
     cur_dot = len(dots_list[cur_figure - 1])
@@ -329,7 +331,7 @@ def make_figure():
     dots_block.insert(END, "-" * 50)
 
 
-# удаление точки
+# удаление последней точки
 def del_dot():
     try:
         if str(dots_block.get(END))[0] == '-':
@@ -337,10 +339,11 @@ def del_dot():
 
         dots_block.delete(END)
 
-    except:
+    except ValueError:
         messagebox.showerror("Ошибка", "Не выбрана точка")
 
 
+# отрисовка и вставка в листбокс добавленной точки
 def draw_point(ev_x, ev_y, click_):
     global dots_block, dots_list
 
@@ -377,6 +380,7 @@ def click(event):
     draw_point(event.x, event.y, 1)
 
 
+# отрисовка соединений точек при клике - ребра
 def draw_lines(click_dots):
     for figure in click_dots:
         for i in range(len(figure) - 1):
@@ -384,6 +388,7 @@ def draw_lines(click_dots):
             draw_line(dots)
 
 
+# финальная отрисовка ребер
 def draw_sides(dots):
     for dot in dots:
         x, y = dot[0:2]
@@ -426,6 +431,42 @@ def undo():
     draw_axes()
 
 
+# изменение цвета фона
+def change_bg_color():
+    global canvas_bg
+    canvas_bg = colorchooser.askcolor()
+    canvas_win.configure(bg=cu.Color(canvas_bg[1]))
+    parse_fill()
+
+
+# изменение цвета отрезка
+def choose_line_color():
+    global line_color
+    line_color = colorchooser.askcolor()
+
+
+# изменение цвета заливки
+def choose_fill_color():
+    global filling_color
+    filling_color = colorchooser.askcolor()
+
+
+#  отчистака канваса
+def clean_canvas():
+    global canvas_bg
+
+    dots_list.clear()
+    sides_list.clear()
+
+    dots_list.append([])
+    sides_list.append([])
+    canvas_win.delete('line', 'dot')
+    draw_axes()
+    canvas_bg = ((255, 255, 255), "#ffffff")
+    canvas_win.configure(bg=cu.Color(canvas_bg[1]))
+    dots_block.delete(0, END)
+
+
 # оси координат и сетка
 def draw_axes():
     s = int(size)
@@ -457,7 +498,7 @@ def draw_axes():
     canvas_win.create_text(s // 2 + 20, 20, text='Y', font="AvantGardeC 14", fill='grey')
 
 
-# растягивание окна
+# модификация окна
 def config(event):
     if event.widget == win:
         global win_x, win_y, win_k, m, size, coord_center
@@ -511,51 +552,6 @@ def config(event):
         draw_axes()
 
 
-# изменение цвета фона
-def change_bg_color():
-    global canvas_bg
-    canvas_bg = colorchooser.askcolor()
-    canvas_win.configure(bg=cu.Color(canvas_bg[1]))
-    parse_fill()
-
-
-# изменение цвета отрезка
-def choose_line_color():
-    global line_color
-    line_color = colorchooser.askcolor()
-
-
-# изменение цвета заливки
-def choose_fill_color():
-    global filling_color
-    filling_color = colorchooser.askcolor()
-
-
-# при нажатии буквы q будет переключать радиобаттон (для быстрого задания концов отрезка)
-def change_option_click(event):
-    global option
-    if option.get() == 1:
-        option.set(2)
-    elif option.get() == 2:
-        option.set(1)
-
-
-#  отчистака канваса
-def clean_canvas():
-    global canvas_bg
-
-    dots_list.clear()
-    sides_list.clear()
-
-    dots_list.append([])
-    sides_list.append([])
-    canvas_win.delete('line', 'dot')
-    draw_axes()
-    canvas_bg = ((255, 255, 255), "#ffffff")
-    canvas_win.configure(bg=cu.Color(canvas_bg[1]))
-    dots_block.delete(0, END)
-
-
 # Окно tkinter
 win = Tk()
 win['bg'] = 'grey'
@@ -566,12 +562,11 @@ win.title("Лабораторная работа #5")
 option = IntVar()
 option.set(1)
 
-# Канвас
-canvas_bg = ((255, 255, 255), "#ffffff")
-canvas_win = Canvas(win, bg=cu.Color(canvas_bg[1]))
-
+# Цвета
 filling_color = ((253, 189, 186), "#fdbdba")
 line_color = ((0, 0, 0), "#000000")
+canvas_bg = ((255, 255, 255), "#ffffff")
+canvas_win = Canvas(win, bg=cu.Color(canvas_bg[1]))
 
 image_canvas = PhotoImage(width = WIN_WIDTH, height = WIN_HEIGHT)
 
@@ -589,14 +584,8 @@ x_entry = Entry(font="AvantGardeC 14", bg='white', fg='black',
 y_entry = Entry(font="AvantGardeC 14", bg='white', fg='black',
                  borderwidth=0, insertbackground='black', justify='center')
 
-method_lbl = Label(text="Алгоритм", bg='pink', font="AvantGardeC 14", fg='black')
-method_combo = ttk.Combobox(win, state='readonly', values=["Брезенхем (целые)", "Брезенхем (вещ)",
-                            "Брезенхем (устран. ступ.)", "ЦДА", "Ву", "Библиотечный"])
-method_combo.current(0)
-
 color_lbl = Label(text="Цвет", bg='pink', font="AvantGardeC 14", fg='black')
 answer_lbl = Label(text="Решение задачи", bg='pink', font="AvantGardeC 14", fg='black')
-
 
 xy_current = [-400, -350, -300, -250, -200, -150, -100, -50,
               0, 50, 100, 150, 200, 250, 300, 350, 400]
@@ -606,10 +595,6 @@ xy_history = [xy_current]  # история координат на оси
 # Кнопки
 sct = Button(text="Построить", font="AvantGardeC 14",
              borderwidth=0)
-# tim = Button(text="Время", font="AvantGardeC 12",
-#              borderwidth=0, command=lambda: time_go())
-# grd = Button(text="Ступенчатость", font="AvantGardeC 12",
-#              borderwidth=0, command=lambda: steps_go())
 con = Button(text="Условие задачи", font="AvantGardeC 14",
              borderwidth=0, command=lambda: messagebox.showinfo("Задание", TASK + AUTHOR))
 bgn = Button(text="Сброс", font="AvantGardeC 14",
@@ -626,6 +611,7 @@ fil = Button(text="заливки", font="AvantGardeC 14",
              borderwidth=0, command=lambda: choose_fill_color())
 add = Button(text="Добавить", font="AvantGardeC 14",
              borderwidth=0, command=lambda: manual_add_dot())
+
 option_filling = IntVar()
 option_filling.set(0)
 
@@ -651,11 +637,10 @@ coord_center = [400, 400]  # центр координат (в координа�
 
 m_board = 1  # коэффициент масштабирования при изменении масштаба канваса
 
-# current_color = (0, 0, 0)
 fill_color = (0, 0, 0)
 
 win.bind("<Configure>", config)
-win.bind("q", change_option_click)
+
 canvas_win.bind('<1>', click)
 
 
