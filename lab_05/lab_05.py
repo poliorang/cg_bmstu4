@@ -43,14 +43,6 @@ def to_canva(dot):
     return [x, y]
 
 
-def distance(point1, point2):
-    x1 = max(point1[0], point2[0])
-    x2 = min(point1[0], point2[0])
-    y1 = max(point1[1], point2[1])
-    y2 = min(point1[1], point2[1])
-    return sqrt(((y2 - y1) * (y2 - y1)) + (x2 - x1) * (x2 - x1))
-
-
 def sign(diff):
     if diff < 0:
         return -1
@@ -58,22 +50,6 @@ def sign(diff):
         return 0
     else:
         return 1
-
-
-def parse_line(opt):
-    try:
-        x1 = int(x1_entry.get())
-        y1 = int(y1_entry.get())
-        x2 = int(x2_entry.get())
-        y2 = int(y2_entry.get())
-    except ValueError:
-        messagebox.showerror("Ошибка", "Неверно введены координаты")
-        return
-
-    p1 = [x1, y1]
-    p2 = [x2, y2]
-
-    parse_methods(p1, p2, opt)
 
 
 def manual_add_dot():
@@ -149,21 +125,6 @@ def bresenham_int(p1, p2, color, step_count=False):
         return dots
 
 
-def parse_color(num_color):
-    color = "orange"
-
-    if (num_color == 1):
-        color = "#ff6e41" #"orange"
-    elif (num_color == 2):
-        color = "#ff5733" #"red"
-    elif (num_color == 3):
-        color = "#0055ff" #"blue"
-    elif (num_color == 4):
-        color = "#45ff00" #"green"
-
-    return color
-
-
 def line_koefs(x1, y1, x2, y2):
     a = y1 - y2
     b = x2 - x1
@@ -236,7 +197,7 @@ def get_edges(dots):
 
     y_max = WIN_HEIGHT
     y_min = 0
-    #
+
     for figure in dots:
         for dot in figure:
             if dot[0] > x_max:
@@ -255,14 +216,6 @@ def get_edges(dots):
 
     return block_edges
 
-def new_dots_check(dots):
-    ans = 0
-    for i in range(len(dots) - 1):
-        print('a ', dots[i][-1][2])
-        if dots[i][-1][2] == 0:
-            ans = i
-            break
-    return ans
 
 def parse_fill():
     cur_figure = len(dots_list) - 1
@@ -288,7 +241,7 @@ def fill_with_sides_and_flag(block_edges, delay=False):
     color_fill = cu.Color(filling_color[1])
     color_line = cu.Color(line_color[1])
     color_background = cu.Color(canvas_bg[1])
-    print(canvas_bg)
+    # print(canvas_bg)
 
     x_max = block_edges[2]
     x_min = block_edges[0]
@@ -334,9 +287,22 @@ def fill_with_sides_and_flag(block_edges, delay=False):
 
     canvas_win.delete('coord')
     draw_axes()
-    # time_label = Label(text="Время: %-3.2f с" % (end_time - start_time), font="-family {Consolas} -size 16",
-    #                    bg="lightgrey")
-    # time_label.place(x=20, y=CV_HEIGHT - 50)
+
+    new_win = time_win(start_time, end_time)
+    new_win.mainloop()
+
+
+def time_win(start_time, end_time):
+    win = Tk()
+    win.title("Время исполнения")
+    win['bg'] = "grey"
+    win.geometry("265x200+630+100")
+    win.resizable(False, False)
+
+    time_label = Label(win, text="Время: %-3.2f с" % (end_time - start_time), bg="pink", font="AvantGardeC 14", fg='black')
+    time_label.place(x=40, y=30, relheight=0.5, relwidth=0.70)
+
+    return win
 
 
 # нарисовать линию
@@ -345,9 +311,6 @@ def draw_line(dots):
     for dot in dots:
         x, y = dot[0:2]
         canvas_win.create_polygon([x, y], [x, y + 1], [x + 1, y + 1], [x + 1, y], fill=dot[2], tag='line')
-    # xy_history.append(xy_current)
-    # line_history.append(dots)
-    # canvas_win.delete('dot')
 
 
 def make_figure():
@@ -520,26 +483,21 @@ def config(event):
         y_entry.place(x=157 * win_x, y=430 * win_y, width=110 * win_x, height=20 * win_y)
 
         add.place(x=30 * win_x, y=452 * win_y, width=237 * win_x, height=25 * win_y)
-        # chg.place(x=112 * win_x, y=452 * win_y, width=75 * win_x, height=25 * win_y)
-        # dlt.place(x=194 * win_x, y=452 * win_y, width=75 * win_x, height=25 * win_y)
 
         # закраска
-        draw_delay.place(x=30 * win_x, y=510 * win_y)
-        draw_without_delay.place(x=150 * win_x, y=510 * win_y)
-        fill_figure_btn.place(x=30 * win_x, y=535 * win_y, width=237 * win_x, height=28 * win_y)
+        answer_lbl.place(x=30 * win_x, y=500 * win_y, width=237 * win_x, height=24 * win_y)
+        draw_delay.place(x=30 * win_x, y=525 * win_y)
+        draw_without_delay.place(x=150 * win_x, y=525 * win_y)
+        fill_figure_btn.place(x=30 * win_x, y=550 * win_y, width=237 * win_x, height=28 * win_y)
 
         # цвет фона, отрезка и заливки
-        color_lbl.place(x=30 * win_x, y=575 * win_y, width=237 * win_x, height=24 * win_y)
-        clr.place(x=30 * win_x, y=602 * win_y, width=75 * win_x, height=25 * win_y)
-        bgc.place(x=112 * win_x, y=602 * win_y, width=75 * win_x, height=25 * win_y)
-        fil.place(x=194 * win_x, y=602 * win_y, width=75 * win_x, height=25 * win_y)
+        color_lbl.place(x=30 * win_x, y=600 * win_y, width=237 * win_x, height=24 * win_y)
+        clr.place(x=30 * win_x, y=627 * win_y, width=75 * win_x, height=25 * win_y)
+        bgc.place(x=112 * win_x, y=627 * win_y, width=75 * win_x, height=25 * win_y)
+        fil.place(x=194 * win_x, y=627 * win_y, width=75 * win_x, height=25 * win_y)
 
         # условие
-        con.place(x=30 * win_x, y=640 * win_y, width=235 * win_x, height=28 * win_y)
-        # сравнения
-        # measure_lbl.place(x=30 * win_x, y=610 * win_y, width=235 * win_x, height=24 * win_y)
-        tim.place(x=30 * win_x, y=670 * win_y, width=109 * win_x, height=28 * win_y)
-        grd.place(x=157 * win_x, y=670 * win_y, width=109 * win_x, height=28 * win_y)
+        con.place(x=30 * win_x, y=670 * win_y, width=235 * win_x, height=28 * win_y)
         # откат
         und.place(x=30 * win_x, y=700 * win_y, width=109 * win_x, height=28 * win_y)
         # к начальным условиям
@@ -637,12 +595,8 @@ method_combo = ttk.Combobox(win, state='readonly', values=["Брезенхем (
 method_combo.current(0)
 
 color_lbl = Label(text="Цвет", bg='pink', font="AvantGardeC 14", fg='black')
+answer_lbl = Label(text="Решение задачи", bg='pink', font="AvantGardeC 14", fg='black')
 
-spectra_lbl = Label(text="Построить пучок", bg='pink', font="AvantGardeC 14", fg='black')
-measure_lbl = Label(text="Сравнить", bg='pink', font="AvantGardeC 14", fg='black')
-
-# Список точек
-# line_history = []  # история координат отрезков
 
 xy_current = [-400, -350, -300, -250, -200, -150, -100, -50,
               0, 50, 100, 150, 200, 250, 300, 350, 400]
@@ -652,10 +606,10 @@ xy_history = [xy_current]  # история координат на оси
 # Кнопки
 sct = Button(text="Построить", font="AvantGardeC 14",
              borderwidth=0)
-tim = Button(text="Время", font="AvantGardeC 12",
-             borderwidth=0, command=lambda: time_go())
-grd = Button(text="Ступенчатость", font="AvantGardeC 12",
-             borderwidth=0, command=lambda: steps_go())
+# tim = Button(text="Время", font="AvantGardeC 12",
+#              borderwidth=0, command=lambda: time_go())
+# grd = Button(text="Ступенчатость", font="AvantGardeC 12",
+#              borderwidth=0, command=lambda: steps_go())
 con = Button(text="Условие задачи", font="AvantGardeC 14",
              borderwidth=0, command=lambda: messagebox.showinfo("Задание", TASK + AUTHOR))
 bgn = Button(text="Сброс", font="AvantGardeC 14",
@@ -703,7 +657,6 @@ fill_color = (0, 0, 0)
 win.bind("<Configure>", config)
 win.bind("q", change_option_click)
 canvas_win.bind('<1>', click)
-
 
 
 # Меню
