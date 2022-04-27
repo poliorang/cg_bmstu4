@@ -22,8 +22,7 @@ MINUS = 0
 TASK = "Алгоритмы растрового заполнения " \
        "сплошных областей.\n" \
        "Алгоритм заполнения со списком " \
-       "ребер и флагом." \
-       "сравнение времени и ступенчатости."
+       "ребер и флагом."
 
 AUTHOR = "\n\nЕгорова Полина ИУ7-44Б"
 
@@ -279,7 +278,6 @@ def parse_fill():
     else:
         delay = False
 
-
     fill_with_sides_and_flag(block_edges, delay=delay)
 
 
@@ -290,6 +288,7 @@ def fill_with_sides_and_flag(block_edges, delay=False):
     color_fill = cu.Color(filling_color[1])
     color_line = cu.Color(line_color[1])
     color_background = cu.Color(canvas_bg[1])
+    print(canvas_bg)
 
     x_max = block_edges[2]
     x_min = block_edges[0]
@@ -370,38 +369,10 @@ def make_figure():
 # удаление точки
 def del_dot():
     try:
-        place = dots_block.curselection()[-1]
+        if str(dots_block.get(END))[0] == '-':
+            dots_block.delete(END)
 
-        points = canvas_win.find_withtag('dot')
-        dot_text = canvas_win.find_withtag('text')
-
-        coords = dots_list.pop(place)
-
-        # получение из листбокса координат точки
-        if str(dots_block.get(place))[0] == '-':
-            place -= 1
-        num1 = str(dots_block.get(place))[5:-1].split(';')
-        num1_1 = int(num1[0])
-        num1_2 = int(num1[1][1:])
-
-        # найти точку для удаления с канваса, соотнеся координаты из листбокса и с канваса
-        for dot in dot_text:
-            # получение координат точки как объекта канваса
-            num2 = str(canvas_win.itemconfig(dot)['text'][-1][1:-1]).split(';')
-            num2_1 = float(num2[0])
-            num2_2 = float(num2[1][1:])
-
-            if num1_1 == num2_1 and num1_2 == num2_2:
-                canvas_win.delete(dot)
-                canvas_win.delete(points[dot_text.index(dot)])
-                break
-
-        dots_block.delete(0, END)
-
-        for i in range(len(dots_list)):
-            dot_str = "%d : (%-3.1f; %-3.1f)" % (i + 1, int(dots_list[i][0]), int(dots_list[i][1]))
-            dots_list[i][2] = i + 1
-            dots_block.insert(END, dot_str)
+        dots_block.delete(END)
 
     except:
         messagebox.showerror("Ошибка", "Не выбрана точка")
@@ -432,8 +403,7 @@ def draw_point(ev_x, ev_y, click_):
     if len(dots_list[cur_figure]) > 1:
         sides_list[cur_figure].append([dots_list[cur_figure][cur_dot - 1], dots_list[cur_figure][cur_dot]])
         dots = bresenham_int(dots_list[cur_figure][cur_dot - 1], dots_list[cur_figure][cur_dot], color_line)
-        # print(dots_list)
-        # print(len(dots_list))
+
         draw_line(dots)
 
 
@@ -451,38 +421,17 @@ def draw_lines(click_dots):
             draw_line(dots)
 
 
-# # отрисовать отрезов без сохранения в историю
-# def draw_without_history(dots):
-#     for dot in dots:
-#         # print(dot)
-#         x, y = dot[0:2]
-#         print(dot)
-#         canvas_win.create_polygon([x, y], [x, y + 1],
-#                                   [x + 1, y + 1], [x + 1, y],
-#                                   fill=dot[2], tag='line')
-
 def draw_sides(dots):
     for dot in dots:
-        # print(dot)
         x, y = dot[0:2]
-        # print(dot)
         canvas_win.create_polygon([x, y], [x, y + 1],
                                   [x + 1, y + 1], [x + 1, y],
                                   fill=dot[2], tag='line')
 
-# # отрисовка всех отрезков (для undo)
-# def draw_all_lines(array_dots):
-#     # print(array_dots)
-#     for dots in array_dots:
-#         if isinstance(dots[0][0], int):
-#             draw_without_history(dots)
-#         else:
-#             draw_all_lines(dots)
-
 
 # откат
 def undo():
-    global dots_list
+    global dots_list, sides_list
 
     if len(dots_list) == 1 and dots_list[0] == []:
         messagebox.showerror("Внимание", "Достигнуто исходное состояние")
@@ -490,13 +439,26 @@ def undo():
 
     canvas_win.delete('line', 'coord')
 
-    dots_list.pop()
-    sides_list.pop()
-    if len(dots_list) == 0:
-        dots_list.append([])
-        sides_list.append([])
-    print('del  \n', dots_list, '\n')
-    # draw_all_lines(dots_list)
+    d = -1
+    if dots_list[-1] == []:
+        if len(dots_list) > 1:
+            d = -2
+    dots_list[d].pop()
+    del_dot()
+
+    s = -1
+    if sides_list[-1] == []:
+        if len(sides_list) > 1:
+            s = -2
+    if sides_list[0] != []:
+        sides_list[s].pop()
+
+    if len(dots_list) > 1 and dots_list[-2] == []:
+        dots_list = dots_list[:-1]
+    if len(sides_list) > 1 and sides_list[-2] == []:
+        sides_list = sides_list[:-1]
+
+    # print('del  \n', dots_list, '\n', sides_list)
     draw_lines(dots_list)
     draw_axes()
 
@@ -557,9 +519,9 @@ def config(event):
         x_entry.place(x=30 * win_x, y=430 * win_y, width=110 * win_x, height=20 * win_y)
         y_entry.place(x=157 * win_x, y=430 * win_y, width=110 * win_x, height=20 * win_y)
 
-        add.place(x=30 * win_x, y=452 * win_y, width=75 * win_x, height=25 * win_y)
-        chg.place(x=112 * win_x, y=452 * win_y, width=75 * win_x, height=25 * win_y)
-        dlt.place(x=194 * win_x, y=452 * win_y, width=75 * win_x, height=25 * win_y)
+        add.place(x=30 * win_x, y=452 * win_y, width=237 * win_x, height=25 * win_y)
+        # chg.place(x=112 * win_x, y=452 * win_y, width=75 * win_x, height=25 * win_y)
+        # dlt.place(x=194 * win_x, y=452 * win_y, width=75 * win_x, height=25 * win_y)
 
         # закраска
         draw_delay.place(x=30 * win_x, y=510 * win_y)
@@ -622,15 +584,15 @@ def change_option_click(event):
 
 #  отчистака канваса
 def clean_canvas():
-    # line_history.append([])
+    global canvas_bg
+
     dots_list.clear()
     sides_list.clear()
-    print(dots_list)
+
     dots_list.append([])
     sides_list.append([])
     canvas_win.delete('line', 'dot')
     draw_axes()
-    # image_canvas = PhotoImage(width=CV_WIDE, height=CV_HEIGHT)
     canvas_bg = ((255, 255, 255), "#ffffff")
     canvas_win.configure(bg=cu.Color(canvas_bg[1]))
     dots_block.delete(0, END)
@@ -688,8 +650,6 @@ xy_history = [xy_current]  # история координат на оси
 
 
 # Кнопки
-bld = Button(text="Построить отрезок", font="AvantGardeC 14",
-             borderwidth=0, command=lambda: parse_line(method_combo.current()))
 sct = Button(text="Построить", font="AvantGardeC 14",
              borderwidth=0)
 tim = Button(text="Время", font="AvantGardeC 12",
@@ -711,10 +671,6 @@ bgc = Button(text="фона", font="AvantGardeC 14",
 fil = Button(text="заливки", font="AvantGardeC 14",
              borderwidth=0, command=lambda: choose_fill_color())
 add = Button(text="Добавить", font="AvantGardeC 14",
-             borderwidth=0, command=lambda: manual_add_dot())
-dlt = Button(text="Удалить", font="AvantGardeC 14",
-             borderwidth=0, command=lambda: manual_add_dot())
-chg = Button(text="Изменить", font="AvantGardeC 14",
              borderwidth=0, command=lambda: manual_add_dot())
 option_filling = IntVar()
 option_filling.set(0)
