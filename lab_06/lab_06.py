@@ -3,6 +3,8 @@ from tkinter import *
 import colorutils as cu
 import matplotlib.pyplot as plt
 from time import time, sleep
+import matplotlib.path as mplPath
+import numpy as np
 
 WIN_WIDTH = 1200
 WIN_HEIGHT = 800
@@ -139,6 +141,19 @@ def solve_lines_intersection(a1, b1, c1, a2, b2, c2):
     return x, y
 
 
+# проверить, внутри ли фигур затравка
+def seed_inside_figure(dot_seed):
+    for figure in dots_list:
+        if len(figure) > 0:
+            arr = np.array([[figure[i][0], figure[i][1]] for i in range(len(figure))])
+            path = mplPath.Path(arr)
+
+            if path.contains_point(dot_seed):
+                return True
+
+    return False
+
+
 # закраска
 def parse_fill():
     cur_figure = len(dots_list) - 1
@@ -151,22 +166,27 @@ def parse_fill():
     if option_filling.get() == 1:
         delay = True
 
-    fill_with_seed(seed, delay=delay)
+    try:
+        dot_seed = to_canva(seed)
+    except:
+        messagebox.showerror("Ошибка", "Не выбран затравочный пиксель")
+
+    if not seed_inside_figure(dot_seed):
+        messagebox.showerror("Ошибка", "Затравочный пиксель находится вне какой-либо фигуры")
+        return
+
+    fill_with_seed(dot_seed, delay=delay)
 
 
 def fill_with_seed(dot_seed, delay=False):
-
     color_fill = cu.Color(filling_color[1])
-
-    # print('fill: ', filling_color[0], '\nline: ', line_color[0], '\nback: ', canvas_bg[0])
 
     start_time = time()
 
     stack = list()
-    stack.append(to_canva(dot_seed))
+    stack.append(dot_seed)
 
     while stack:
-
         dot_seed = stack.pop()
 
         x, y = int(dot_seed[0]), int(dot_seed[1])
@@ -181,9 +201,7 @@ def fill_with_seed(dot_seed, delay=False):
 
         # Заполнение текущей строки право до ребра или уже закрашенного пикселя
         x = x + 1
-        # print('aa ', image_canvas.get(x, y), line_color[0])
         while image_canvas.get(x, y) != TEMP_SIDE_COLOR_CHECK and image_canvas.get(x, y) != filling_color[0]:
-            # print(image_canvas.get(x, y), line_color[0])
             image_canvas.put(color_fill, (x, y))
             canvas_win.create_polygon([x, y], [x, y + 1],
                                       [x + 1, y + 1], [x + 1, y],
@@ -206,7 +224,6 @@ def fill_with_seed(dot_seed, delay=False):
 
         # Сканирование верхней строки
         x = x_left
-
         y = tmp_y + 1
 
         while x <= x_right:
@@ -322,7 +339,6 @@ def make_figure():
     canvas_win.delete('dot')
 
     dots_list.append(list())
-    sides_list.append(list())
 
     dots_block.insert(END, "-" * 50)
 
@@ -375,7 +391,6 @@ def draw_point(ev_x, ev_y, click_):
 
     color_line = cu.Color(line_color[1])
     if len(dots_list[cur_figure]) > 1:
-        sides_list[cur_figure].append([dots_list[cur_figure][cur_dot - 1], dots_list[cur_figure][cur_dot]])
         dots = bresenham_int(dots_list[cur_figure][cur_dot - 1], dots_list[cur_figure][cur_dot], color_line)
 
         draw_line(dots)
@@ -407,7 +422,7 @@ def draw_sides(dots):
 
 # откат
 def undo():
-    global dots_list, sides_list
+    global dots_list
 
     if len(dots_list) == 1 and dots_list[0] == []:
         messagebox.showerror("Внимание", "Достигнуто исходное состояние")
@@ -422,19 +437,10 @@ def undo():
     dots_list[d].pop()
     del_dot()
 
-    s = -1
-    if sides_list[-1] == []:
-        if len(sides_list) > 1:
-            s = -2
-    if sides_list[0] != []:
-        sides_list[s].pop()
 
     if len(dots_list) > 1 and dots_list[-2] == []:
         dots_list = dots_list[:-1]
-    if len(sides_list) > 1 and sides_list[-2] == []:
-        sides_list = sides_list[:-1]
 
-    # print('del  \n', dots_list, '\n', sides_list)
     draw_lines(dots_list)
     draw_axes()
 
@@ -464,12 +470,10 @@ def clean_canvas():
     global canvas_bg
 
     dots_list.clear()
-    sides_list.clear()
 
     dots_list.append([])
-    sides_list.append([])
     canvas_win.delete('line', 'dot')
-    draw_axes()
+    # draw_axes()
     canvas_bg = ((255, 255, 255), "#ffffff")
     canvas_win.configure(bg=cu.Color(canvas_bg[1]))
     image_canvas.put("#ffffff", to=(0, 0, WIN_WIDTH, WIN_HEIGHT))
@@ -595,7 +599,6 @@ seed_block = Listbox(bg="#ffffff")
 seed_block.configure(font="AvantGardeC 14", fg='black')
 
 dots_list = [[]]
-sides_list = [[]]
 
 seed = []
 
