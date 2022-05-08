@@ -1,7 +1,6 @@
 from tkinter import messagebox, ttk, colorchooser, PhotoImage
 from tkinter import *
 import colorutils as cu
-import matplotlib.pyplot as plt
 from time import time, sleep
 import matplotlib.path as mplPath
 import numpy as np
@@ -120,27 +119,6 @@ def bresenham_int(p1, p2, color, step_count=False):
         return dots
 
 
-# коэффициенты прямой
-def line_koefs(x1, y1, x2, y2):
-    a = y1 - y2
-    b = x2 - x1
-    c = x1 * y2 - x2 * y1
-
-    return a, b, c
-
-
-# точка пересечения прямых
-def solve_lines_intersection(a1, b1, c1, a2, b2, c2):
-    opr = a1 * b2 - a2 * b1
-    opr1 = (-c1) * b2 - b1 * (-c2)
-    opr2 = a1 * (-c2) - (-c1) * a2
-
-    x = opr1 / opr
-    y = opr2 / opr
-
-    return x, y
-
-
 # проверить, внутри ли фигур затравка
 def seed_inside_figure(dot_seed):
     for figure in dots_list:
@@ -178,6 +156,7 @@ def parse_fill():
     fill_with_seed(dot_seed, delay=delay)
 
 
+# построчное заполнение
 def fill_with_seed(dot_seed, delay=False):
     color_fill = cu.Color(filling_color[1])
 
@@ -431,12 +410,11 @@ def undo():
     canvas_win.delete('line', 'coord')
 
     d = -1
-    if dots_list[-1] == []:
+    if not dots_list[-1]:
         if len(dots_list) > 1:
             d = -2
     dots_list[d].pop()
     del_dot()
-
 
     if len(dots_list) > 1 and dots_list[-2] == []:
         dots_list = dots_list[:-1]
@@ -470,13 +448,14 @@ def clean_canvas():
     global canvas_bg
 
     dots_list.clear()
-
     dots_list.append([])
+
     canvas_win.delete('line', 'dot')
-    # draw_axes()
     canvas_bg = ((255, 255, 255), "#ffffff")
     canvas_win.configure(bg=cu.Color(canvas_bg[1]))
+
     image_canvas.put("#ffffff", to=(0, 0, WIN_WIDTH, WIN_HEIGHT))
+
     dots_block.delete(0, END)
 
 
