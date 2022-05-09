@@ -298,7 +298,6 @@ def time_win(start_time, end_time):
 
 # нарисовать линию
 def draw_line(dots):
-    global xy_history
     color_line = cu.Color(line_color[1])
     for dot in dots:
         x, y = dot[0:2]
@@ -555,11 +554,7 @@ def config(event):
 win = Tk()
 win['bg'] = 'grey'
 win.geometry("%dx%d" % (WIN_WIDTH, WIN_HEIGHT))
-win.title("Лабораторная работа #5")
-
-# переменная для радиобаттона
-option = IntVar()
-option.set(1)
+win.title("Лабораторная работа #6")
 
 # Цвета
 filling_color = ((253, 189, 186), "#fdbdba")
@@ -578,7 +573,6 @@ seed_block = Listbox(bg="#ffffff")
 seed_block.configure(font="AvantGardeC 14", fg='black')
 
 dots_list = [[]]
-
 seed = []
 
 x_lbl = Label(text="X", bg='lightgrey', font="AvantGardeC 14", fg='black')
@@ -593,8 +587,6 @@ answer_lbl = Label(text="Решение задачи", bg='pink', font="AvantGar
 
 xy_current = [-400, -350, -300, -250, -200, -150, -100, -50,
               0, 50, 100, 150, 200, 250, 300, 350, 400]
-xy_history = [xy_current]  # история координат на оси
-
 
 # Кнопки
 sct = Button(text="Построить", font="AvantGardeC 14",
@@ -644,13 +636,9 @@ border = WIDTH  # граница (максимальная видимая коо
 ten_percent = 0  # 10% от величины границы
 m = size * win_k / border  # коэффициент масштабирования канваса
 coord_center = [400, 400]  # центр координат (в координатах канваса)
-
 m_board = 1  # коэффициент масштабирования при изменении масштаба канваса
 
-fill_color = (0, 0, 0)
-
 win.bind("<Configure>", config)
-
 canvas_win.bind('<1>', click)
 
 
