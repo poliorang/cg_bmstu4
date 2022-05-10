@@ -146,11 +146,11 @@ def get_vector(dot1, dot2):
 
 
 def vector_mul(vec1, vec2):
-    return (vec1[0] * vec2[1] - vec1[1] * vec2[0])
+    return vec1[0] * vec2[1] - vec1[1] * vec2[0]
 
 
 def scalar_mul(vec1, vec2):
-    return (vec1[0] * vec2[0] + vec1[1] * vec2[1])
+    return vec1[0] * vec2[0] + vec1[1] * vec2[1]
 
 
 def line_koefs(x1, y1, x2, y2):
@@ -166,7 +166,7 @@ def solve_lines_intersection(a1, b1, c1, a2, b2, c2):
     opr1 = (-c1) * b2 - b1 * (-c2)
     opr2 = a1 * (-c2) - (-c1) * a2
 
-    if (opr == 0):
+    if opr == 0:
         return -5, -5  # прямые параллельны
 
     x = opr1 / opr
@@ -208,17 +208,16 @@ def extra_check():  # чтобы не было пересечений
         line1 = combs_lines[i][0]
         line2 = combs_lines[i][1]
 
-        if (are_connected_sides(line1, line2)):
-            print("Connected")
+        if are_connected_sides(line1, line2):
             continue
 
         a1, b1, c1 = line_koefs(line1[0][0], line1[0][1], line1[1][0], line1[1][1])
         a2, b2, c2 = line_koefs(line2[0][0], line2[0][1], line2[1][0], line2[1][1])
 
-        dot_intersec = solve_lines_intersection(a1, b1, c1, a2, b2, c2)
+        dot_intersection = solve_lines_intersection(a1, b1, c1, a2, b2, c2)
 
-        if (is_dot_between(line1[0], line1[1], dot_intersec)) \
-                and (is_dot_between(line2[0], line2[1], dot_intersec)):
+        if (is_dot_between(line1[0], line1[1], dot_intersection)) \
+                and (is_dot_between(line2[0], line2[1], dot_intersection)):
             return True
 
     return False
@@ -241,9 +240,7 @@ def check_polygon():
 
     check = extra_check()
 
-    print("\n\nResult:", check, "\n\n")
-
-    if (check):
+    if check:
         return False
 
     return True
@@ -253,12 +250,12 @@ def get_normal(dot1, dot2, pos):
     f_vect = get_vector(dot1, dot2)
     pos_vect = get_vector(dot2, pos)
 
-    if (f_vect[1]):
+    if f_vect[1]:
         normal = [1, -f_vect[0] / f_vect[1]]
     else:
         normal = [0, 1]
 
-    if (scalar_mul(pos_vect, normal) < 0):
+    if scalar_mul(pos_vect, normal) < 0:
         normal[0] = -normal[0]
         normal[1] = -normal[1]
 
@@ -269,7 +266,7 @@ def cyrus_beck_algorithm(line, count):
     dot1 = line[0]
     dot2 = line[1]
 
-    d = [dot2[0] - dot1[0], dot2[1] - dot1[1]]
+    d = [dot2[0] - dot1[0], dot2[1] - dot1[1]]  # директриса
 
     t_bottom = 0
     t_top = 1
@@ -284,18 +281,18 @@ def cyrus_beck_algorithm(line, count):
 
         if d_scalar == 0:
             if w_scalar < 0:
-                return
+                return  # параллельный невидимый
             else:
-                continue
+                continue  # параллельный видимый
 
         t = -w_scalar / d_scalar
 
-        if d_scalar > 0:
+        if d_scalar > 0:  # ближе к началу отрезка
             if t <= 1:
                 t_bottom = max(t_bottom, t)
             else:
                 return
-        elif d_scalar < 0:
+        elif d_scalar < 0:  # ближе к концу отрезка
             if t >= 0:
                 t_top = min(t_top, t)
             else:
@@ -349,6 +346,8 @@ def cut_area():
 
     find_start_dot()
     dot = clipper_coords.pop()
+
+    # print(clipper_coords, dot)
 
     for line in lines:
         cyrus_beck_algorithm(line, len(clipper_coords))
@@ -684,14 +683,8 @@ add_dot = Button(text="Добавить точку", font="AvantGardeC 14",
 add_clipper = Button(text="Замкнуть", font="AvantGardeC 14",
                      borderwidth=0, command=lambda: make_figure())
 
-
 clipper_radio = Radiobutton(variable=option_line, value=2, bg="grey",
                          activebackground="grey", highlightbackground="grey")
-
-INFO_CLIPPER = 'Регулярный отсекатель задается по двум точкам: ' \
-               'верхней левой и нижней правой или верхней правой и нижней левой'
-info_clipper = Button(text="?", font="AvantGardeC 14",
-                      borderwidth=0, command=lambda: messagebox.showinfo("Отсекатель", INFO_CLIPPER))
 
 
 line_coords = []
@@ -701,7 +694,7 @@ history = []
 lines = []
 clippers = []
 
-is_close_figure = 0 # была ли замкнута фигура
+is_close_figure = 0  # была ли замкнута фигура
 
 
 # Кнопки

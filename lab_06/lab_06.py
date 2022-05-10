@@ -178,7 +178,7 @@ def fill_with_seed(dot_seed, delay=False):
         tmp_x = x
         tmp_y = y
 
-        # Заполнение текущей строки право до ребра или уже закрашенного пикселя
+        # Заполнение текущей строки вправо до ребра или уже закрашенного пикселя
         x = x + 1
         while image_canvas.get(x, y) != TEMP_SIDE_COLOR_CHECK and image_canvas.get(x, y) != filling_color[0]:
             image_canvas.put(color_fill, (x, y))

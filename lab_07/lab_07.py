@@ -181,12 +181,12 @@ def method_sazerland_kohen(clipper, line):
             dot1 = dot2
             dot2 = tmp
 
-        if fl != -1:
-            if i < 2:
+        if fl != -1:  # если отрезок не вертикальный
+            if i < 2:  # работаем с правой и левой сторонами
                 dot1[1] = m * (clipper[i] - dot1[0]) + dot1[1]
                 dot1[0] = clipper[i]
                 continue
-            else:
+            else:  # работаем с нижней и верхней сторонами
                 dot1[0] = (1 / m) * (clipper[i] - dot1[1]) + dot1[0]
 
         dot1[1] = clipper[i]
