@@ -44,13 +44,14 @@ def draw_line():
     lines.append([dot1, dot2])
     history.append([dot1, dot2, 'line'])
 
+    canvas_win.delete('lineHelper')
     canvas_win.create_line(dot1, dot2, fill=color, tag='line')
 
 
 # нарисовать отсекатель
 def draw_clipper():
     global clipper_coords
-    canvas_win.delete('clipper')
+    canvas_win.delete('clipper', 'lineHelper')
     color = cu.Color(clipper_color[1])
 
     dot1 = to_canva([int(x1_clipper_entry.get()), int(y1_clipper_entry.get())])
@@ -64,7 +65,7 @@ def draw_clipper():
 
 # отрисовка и вставка в листбокс добавленной точки
 def draw_point(ev_x, ev_y, click_):
-    global option_line, line_coords, clipper_coords
+    global option_line, line_coords, clipper_coords, click_flag, start_line
 
     if click_:
         x, y = ev_x, ev_y
@@ -73,39 +74,50 @@ def draw_point(ev_x, ev_y, click_):
 
     x_y = to_coords([x, y])
 
-    if option_line.get() == 0:
-        x1_entry.delete(0, END)
-        y1_entry.delete(0, END)
-        x1_entry.insert(0, "%d" % x_y[0])
-        y1_entry.insert(0, "%d" % x_y[1])
-        canvas_win.delete('dot1')
-        canvas_win.create_oval(x - 2, y - 2, x + 2, y + 2,
-                               outline='lightgreen', fill='lightgreen', activeoutline='pink', width=2, tag='dot1')
-    elif option_line.get() == 1:
-        x2_entry.delete(0, END)
-        y2_entry.delete(0, END)
-        x2_entry.insert(0, "%d" % x_y[0])
-        y2_entry.insert(0, "%d" % x_y[1])
-        canvas_win.delete('dot2')
-        canvas_win.create_oval(x - 2, y - 2, x + 2, y + 2,
-                               outline='lightgreen', fill='lightgreen', activeoutline='pink', width=2, tag='dot2')
+    if click_flag == 1:
+        start_line = [x, y]
 
-    elif option_line.get() == 2:
-        x1_clipper_entry.delete(0, END)
-        y1_clipper_entry.delete(0, END)
-        x1_clipper_entry.insert(0, "%d" % x_y[0])
-        y1_clipper_entry.insert(0, "%d" % x_y[1])
-        canvas_win.delete('clipper1')
-        canvas_win.create_oval(x - 2, y - 2, x + 2, y + 2,
-                               outline='pink', fill='pink', activeoutline='lightgreen', width=2, tag='clipper1')
-    elif option_line.get() == 3:
-        x2_clipper_entry.delete(0, END)
-        y2_clipper_entry.delete(0, END)
-        x2_clipper_entry.insert(0, "%d" % x_y[0])
-        y2_clipper_entry.insert(0, "%d" % x_y[1])
-        canvas_win.delete('clipper2')
-        canvas_win.create_oval(x - 2, y - 2, x + 2, y + 2,
-                               outline='pink', fill='pink', activeoutline='lightgreen', width=2, tag='clipper2')
+    if option_line.get() == 0:
+        if click_flag == 1:
+            start_line = [x, y]
+
+            x1_entry.delete(0, END)
+            y1_entry.delete(0, END)
+            x1_entry.insert(0, "%d" % x_y[0])
+            y1_entry.insert(0, "%d" % x_y[1])
+            canvas_win.delete('dot1')
+            canvas_win.create_oval(x - 2, y - 2, x + 2, y + 2,
+                                   outline='lightgreen', fill='lightgreen', activeoutline='pink', width=2, tag='dot1')
+
+        if click_flag == 2:
+            x2_entry.delete(0, END)
+            y2_entry.delete(0, END)
+            x2_entry.insert(0, "%d" % x_y[0])
+            y2_entry.insert(0, "%d" % x_y[1])
+            canvas_win.delete('dot2')
+            canvas_win.create_oval(x - 2, y - 2, x + 2, y + 2,
+                                   outline='lightgreen', fill='lightgreen', activeoutline='pink', width=2, tag='dot2')
+            draw_line()
+
+    elif option_line.get() == 1:
+        if click_flag == 1:
+            start_line = [x, y]
+            x1_clipper_entry.delete(0, END)
+            y1_clipper_entry.delete(0, END)
+            x1_clipper_entry.insert(0, "%d" % x_y[0])
+            y1_clipper_entry.insert(0, "%d" % x_y[1])
+            canvas_win.delete('clipper1')
+            canvas_win.create_oval(x - 2, y - 2, x + 2, y + 2,
+                                   outline='pink', fill='pink', activeoutline='lightgreen', width=2, tag='clipper1')
+        if click_flag == 2:
+            x2_clipper_entry.delete(0, END)
+            y2_clipper_entry.delete(0, END)
+            x2_clipper_entry.insert(0, "%d" % x_y[0])
+            y2_clipper_entry.insert(0, "%d" % x_y[1])
+            canvas_win.delete('clipper2')
+            canvas_win.create_oval(x - 2, y - 2, x + 2, y + 2,
+                                   outline='pink', fill='pink', activeoutline='lightgreen', width=2, tag='clipper2')
+            draw_clipper()
 
 
 def get_dot_bits(clipper, dot):
@@ -195,11 +207,14 @@ def method_sazerland_kohen(clipper, line):
     canvas_win.create_line(dot1, dot2, fill=res_color, tag='result')
 
 
+def cut_area_with_enter(event):
+    cut_area()
+
+
 # отсечь
 def cut_area():
     global clipper_coords
 
-    print(clipper_coords)
     if len(clipper_coords) < 1:
         messagebox.showinfo("Ошибка", "Не задан отсекатель")
         return
@@ -215,10 +230,37 @@ def cut_area():
         method_sazerland_kohen(clipper, line)
 
 
-# определение и запись координат точки по клику
-def click(event):
+# предварительный просмотр линии
+def motion(event):
+    global click_flag, start_line
     if event.x < 0 or event.x > WIN_WIDTH * win_k or event.y < 0 or event.y > WIN_HEIGHT * win_k:
         return
+
+    if option_line.get() == 0:
+        if click_flag == 1:
+            canvas_win.delete("lineHelper")
+            canvas_win.create_line(start_line[0], start_line[1], event.x, event.y,
+                                   fill='grey', width=1, dash=(7, 9), tag='lineHelper')
+    if option_line.get() == 1:
+        if click_flag == 1:
+            canvas_win.delete("lineHelper")
+            canvas_win.create_rectangle(start_line[0], start_line[1], event.x, event.y,
+                                        width=1, dash=(7, 9), outline='grey', tag='lineHelper')
+
+
+# определение и запись координат точки по клику
+def click(event):
+    global click_flag
+    if event.x < 0 or event.x > WIN_WIDTH * win_k or event.y < 0 or event.y > WIN_HEIGHT * win_k:
+        return
+
+    if click_flag == 0:
+        click_flag = 1
+    elif click_flag == 1:
+        click_flag = 2
+    elif click_flag == 2:
+        click_flag = 1
+
     draw_point(event.x, event.y, 1)
 
 
@@ -260,27 +302,14 @@ def change_option_click_down(event):
     global option_line
 
     current_position = option_line.get()
-    option_line.set((current_position + 1) % 4)
+    option_line.set((current_position + 1) % 2)
 
 
 def change_option_click_up(event):
     global option_line
 
     current_position = option_line.get()
-    option_line.set((current_position - 1) % 4)
-
-
-# отрисовка по нажатию энтера
-def draw_with_enter(event):
-    global option_line
-
-    current_position = option_line.get()
-
-    if 0 <= current_position <= 1:
-        draw_line()
-
-    elif 2 <= current_position <= 3:
-        draw_clipper()
+    option_line.set((current_position - 1) % 2)
 
 
 # определить крайний отсекатель для ундо
@@ -296,7 +325,7 @@ def find_rectangle(history):
 def undo():
     global history, clipper_coords, lines
 
-    print(*history)
+    # print(*history)
     if len(history) == 0:
         messagebox.showerror("Внимание", "Достигнуто исходное состояние")
         return
@@ -323,7 +352,6 @@ def clean_canvas():
     canvas_win.delete('line', 'dot1', 'dot2', 'clipper1', 'clipper2', 'clipper', 'result')
     canvas_color = ((255, 255, 255), "#ffffff")
     canvas_win.configure(bg=cu.Color(canvas_color[1]))
-
 
 
 # оси координат и сетка
@@ -369,7 +397,7 @@ def config(event):
         canvas_win.place(x=300 * win_x, y=0 * win_y, width=size, height=size)
         canvas_win.create_image((WIN_WIDTH / 2, WIN_HEIGHT / 2), image=image_canvas, state="normal")
 
-        info_lbl.place(x=30 * win_x, y=20 * win_y, width=237 * win_x, height=65 * win_y)
+        info_lbl.place(x=30 * win_x, y=17 * win_y, width=237 * win_x, height=65 * win_y)
 
         # координаты отрезка
         line_lbl.place(x=30 * win_x, y=108 * win_y, width=237 * win_x, height=24 * win_y)
@@ -386,8 +414,7 @@ def config(event):
 
         add_line.place(x=30 * win_x, y=185 * win_y, width=237 * win_x, height=25 * win_y)
 
-        point1_radio.place(x=3 * win_x, y=135 * win_y)
-        point2_radio.place(x=3 * win_x, y=157 * win_y)
+        point1_radio.place(x=3 * win_x, y=108 * win_y)
 
 
         # координаты отсекателя
@@ -405,8 +432,7 @@ def config(event):
 
         add_clipper.place(x=30 * win_x, y=327 * win_y, width=237 * win_x, height=25 * win_y)
 
-        clipper1_radio.place(x=3 * win_x, y=277 * win_y)
-        clipper2_radio.place(x=3 * win_x, y=299 * win_y)
+        clipper1_radio.place(x=3 * win_x, y=250 * win_y)
 
         info_clipper.place(x=228 * win_x, y=250 * win_y, width=40 * win_x, height=24 * win_y)
 
@@ -463,9 +489,10 @@ canvas_win = Canvas(win, bg=cu.Color(canvas_color[1]))
 image_canvas = PhotoImage(width = WIN_WIDTH, height = WIN_HEIGHT)
 win.bind("<Configure>", config)
 canvas_win.bind('<1>', click)
-win.bind("s", change_option_click_down)
-win.bind("w", change_option_click_up)
-win.bind("<Return>", draw_with_enter)
+win.bind("<Motion>", motion)
+win.bind('s', change_option_click_down)
+win.bind('w', change_option_click_up)
+win.bind("<Return>", cut_area_with_enter)
 
 
 # выбор поля, куда вводятся координаты точки, которую тыкнули
@@ -476,8 +503,7 @@ option_line.set(0)
 # информация о клавишах
 INFO = "w - движение вверх по радиобаттону\n" \
        "s - движение вниз по радиобаттону\n" \
-       "Enter - построить отрезок\n" \
-       "        или отсекатель"
+       "Enter - отсечь"
 info_lbl = Label(text=INFO, font="AvantGardeC 12", fg='grey', bg='lightgrey')
 
 # отрезок
@@ -496,11 +522,9 @@ x2_entry = Entry(font="AvantGardeC 14", bg='white', fg='black',
 y2_entry = Entry(font="AvantGardeC 14", bg='white', fg='black',
                 borderwidth=0, insertbackground='black', justify='center')
 add_line = Button(text="Добавить отрезок", font="AvantGardeC 14",
-             borderwidth=0, command=lambda: draw_line())
+                  borderwidth=0, command=lambda: draw_line())
 
 point1_radio = Radiobutton(variable=option_line, value=0, bg="grey",
-                         activebackground="grey", highlightbackground="grey")
-point2_radio = Radiobutton(variable=option_line, value=1, bg="grey",
                          activebackground="grey", highlightbackground="grey")
 
 
@@ -523,9 +547,7 @@ add_clipper = Button(text="Начертить отсекатель", font="Avant
              borderwidth=0, command=lambda: draw_clipper())
 
 
-clipper1_radio = Radiobutton(variable=option_line, value=2, bg="grey",
-                         activebackground="grey", highlightbackground="grey")
-clipper2_radio = Radiobutton(variable=option_line, value=3, bg="grey",
+clipper1_radio = Radiobutton(variable=option_line, value=1, bg="grey",
                          activebackground="grey", highlightbackground="grey")
 
 INFO_CLIPPER = 'Регулярный отсекатель задается по двум точкам: ' \
@@ -540,6 +562,9 @@ history = []
 
 lines = []
 clippers = []
+
+click_flag = 0  # был ли клик
+start_line = []
 
 
 # Кнопки
