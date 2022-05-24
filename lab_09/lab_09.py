@@ -88,7 +88,6 @@ def draw_line_rectangle(new_dot):
 def make_figure():
     global is_close_clipper, is_close_figure, option_line, click_clipper, start_clipper
 
-
     if option_line.get() == FIGURE:
         if len(figure_coords[-1]) < 3:
             messagebox.showerror("Ошибка", "Недостаточно точек, чтобы замкнуть фигуру")
@@ -106,14 +105,14 @@ def make_figure():
         is_close_clipper = 1
         if click_clipper == 0:
             click_clipper = 1
-        # start_clipper = [x, y]
+        start_clipper = []
 
 
 # отрисовка и вставка в листбокс добавленной точки
 def draw_point(ev_x, ev_y, click_):
-    global option_line, figure_coords, clipper_coords, \
+    global option_line, figure_coords, clipper_coords, start_clipper, \
         is_close_clipper, is_close_figure, \
-        start_rectangle, start_clipper,\
+        start_rectangle,\
         click_rectangle, click_clipper
 
     if click_:
@@ -140,12 +139,12 @@ def draw_point(ev_x, ev_y, click_):
             figure_coords.append([])
             is_close_figure = 0
 
-
     elif option_line.get() == 1:
+        start_clipper = [x, y]
+        print(start_clipper)
         if is_close_clipper:
             for _ in range(len(clipper_coords)):
                 clipper_block.delete(END)
-            start_clipper = []
             click_clipper = 0
             clipper_coords = []
             is_close_clipper = 0
@@ -155,6 +154,7 @@ def draw_point(ev_x, ev_y, click_):
         clipper_block.insert(END, dot_str)
         canvas_win.delete('lineHelper')
         draw_line_clipper([x, y])
+
         canvas_win.create_oval(x - 2, y - 2, x + 2, y + 2,
                                outline='pink', fill='pink', activeoutline='lightgreen', width=2, tag='clipper_dot')
 
@@ -227,7 +227,6 @@ def extra_check(object):  # чтобы не было пересечений
         line2 = combs_lines[i][1]
 
         if are_connected_sides(line1, line2):
-            print("Connected")
             continue
 
         a1, b1, c1 = line_koefs(line1[0][X_DOT], line1[0][Y_DOT], line1[1][X_DOT], line1[1][Y_DOT])
@@ -260,8 +259,6 @@ def check_polygon():  # через проход по всем точкам, по
             return False
 
     check = extra_check(clipper_coords)
-
-    print("\n\nResult:", check, "\n\n")
 
     if check:
         return False
@@ -320,7 +317,6 @@ def sutherland_hodgman_algorythm(cutter_line, position, prev_result):
 
     normal = get_normal(dot1, dot2, position)
 
-    print(prev_result)
     prev_vision = is_visible(prev_result[-2], dot1, dot2)
 
     for cur_dot_index in range(-1, len(prev_result)):
@@ -344,26 +340,6 @@ def sutherland_hodgman_algorythm(cutter_line, position, prev_result):
         prev_vision = cur_vision
 
     return cur_result
-
-
-def find_start_dot():
-    y_max = clipper_coords[0][1]
-    dot_index = 0
-
-    for i in range(len(clipper_coords)):
-        if clipper_coords[i][1] > y_max:
-            y_max = clipper_coords[i][1]
-            dot_index = i
-
-    clipper_coords.pop()
-
-    for _ in range(dot_index):
-        clipper_coords.append(clipper_coords.pop(0))
-
-    clipper_coords.append(clipper_coords[0])
-
-    if clipper_coords[-2][0] > clipper_coords[1][0]:
-        clipper_coords.reverse()
 
 
 def cut_area():
@@ -392,7 +368,7 @@ def cut_area():
             continue
 
         if extra_check(figure):
-            messagebox.showinfo("Ошибка", "Отекаемое должно быть многоугольником")
+            messagebox.showinfo("Ошибка", "Неверно задан отсекаемый многоугольник")
             return
 
         result = copy.deepcopy(figure)
@@ -486,8 +462,9 @@ def motion(event):
     if option_line.get() == 1:
         if click_clipper == 1:
             canvas_win.delete("lineHelper")
+            print(start_clipper)
             canvas_win.create_line(start_clipper[0], start_clipper[1], event.x, event.y,
-                                        fill='grey', width=1, dash=(7, 9), tag='lineHelper')
+                                   fill='grey', width=1, dash=(7, 9), tag='lineHelper')
 
 
 # определение и запись координат точки по клику
@@ -768,7 +745,7 @@ result_color = ((147, 236, 148), "#93ec94")  # светло-зеленый
 canvas_win = Canvas(win, bg=cu.Color(canvas_color[1]))
 image_canvas = PhotoImage(width = WIN_WIDTH, height = WIN_HEIGHT)
 win.bind("<Configure>", config)
-# win.bind("<Motion>", motion)
+win.bind("<Motion>", motion)
 canvas_win.bind('<1>', click)
 win.bind("s", change_option_click_down)
 win.bind("w", change_option_click_up)
