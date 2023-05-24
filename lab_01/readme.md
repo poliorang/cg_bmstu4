@@ -1,7 +1,7 @@
 # Лабораторная 1. Вариант 4.
-# _Геометрические преобразования_  
+## Геометрические преобразования  
 
-<img width="1206" alt="Снимок экрана 2022-06-21 в 15 04 18" src="https://user-images.githubusercontent.com/73752832/174795603-f3ce9955-3863-46dd-8099-aa3dd963a8e8.png">
+![Alt lab_01](https://github.com/poliorang/CG_BMSTU_4_semester/blob/main/img/lab_01)
 
 
 ### Условие задачи  
