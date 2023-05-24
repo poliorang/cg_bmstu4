@@ -1,7 +1,7 @@
 # Лабораторная 1. Вариант 4.
 ## Геометрические преобразования  
 
-![Alt lab_01](https://github.com/poliorang/CG_BMSTU_4_semester/blob/main/img/lab_01)
+![lab_01](../img/lab_01.png)
 
 
 ### Условие задачи  
